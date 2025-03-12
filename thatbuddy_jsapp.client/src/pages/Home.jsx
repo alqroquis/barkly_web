@@ -12,11 +12,7 @@ import appLogo from '../assets/appLogo.png';
 
 
 const Home = () => {
-    return (
-        <>
-            <CustomContainer />
-        </>
-    );
+    return <CustomContainer />;
 };
 
 
@@ -32,7 +28,7 @@ const textArray = [
 
 const StyledParagraphs = () => {
     return (
-        <div className="text-container">
+        <div className="text-container d-none d-sm-flex">
             {textArray.map((text, index) => (
                 <p key={index} className={`custom-paragraph ${index % 2 === 0 ? "even" : "odd"}`}>
                     {text}
@@ -94,9 +90,8 @@ const societyList = [
 const AppInfo = () => {
     return (
         <div className="d-flex flex-lg-row flex-column align-items-lg-start align-items-center text-lg-start text-center p-4 mt-100">
-            {/* Логотип */}
-            <div
-                className="flex-shrink-0"
+            
+            <div className="flex-shrink-0"
                 style={{
                     width: "166px",
                     height: "166px",
@@ -105,14 +100,12 @@ const AppInfo = () => {
                 }}
             ></div>
 
-            {/* Описание */}
             <div className="ms-lg-4 mt-3 mt-lg-0">
                 <h3 className="fw-bold text-lg-start" style={{ maxWidth: "400px" }}>that’s my buddy</h3>
                 <p style={{ maxWidth: "400px" }}>
                     Следите за здоровьем питомца и делайте жизнь с собакой в городе проще! Напоминания, карты, лекарства — всё в одном приложении.
                 </p>
 
-                {/* Кнопки */}
                 <div className="d-flex flex-wrap justify-content-lg-start justify-content-center gap-2">
                     <button className="black-button">APK</button>
                     <button className="black-button">Google Play</button>
@@ -142,15 +135,13 @@ const FAQ = () => {
     };
 
     return (
-        <div className="container d-flex flex-lg-row flex-column flex-wrap justify-content-center gap-3 p-5 mt-5">
+        <div className="container d-flex flex-lg-row flex-column flex-wrap justify-content-center gap-3 p-1 mt-lg-5 mb-lg-3">
             {faqs.map((faq, index) => (
                 <div
                     key={index}
-                    className="faq-item p-3"
                     onClick={() => toggleFAQ(index)}
                     style={{
-                        width: "506px",
-                        height: openIndex === index ? "auto" : "80px", // Закрытые = 50px, Открытый = auto
+                        minHeight: openIndex === index ? "auto" : "80px",
                         background: "#FFFFFF",
                         borderRadius: "20px",
                         display: "flex",
@@ -161,14 +152,14 @@ const FAQ = () => {
                         boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
                         overflow: "hidden",
                     }}
-                >
+                    className="faq-item p-3 w-sm-100 w-md-50 w-lg-50"                >
                     <div className="d-flex justify-content-between align-items-center w-100">
                         <p className="mb-0 fw-bold">{faq.question}</p>
                         <img
                             src={
                                 openIndex === index
-                                    ? "https://img.icons8.com/?size=100&id=99771&format=png&color=000000" // Стрелка вверх
-                                    : "https://img.icons8.com/?size=100&id=87356&format=png&color=000000" // Стрелка вниз
+                                    ? "https://img.icons8.com/?size=100&id=99771&format=png&color=000000" 
+                                    : "https://img.icons8.com/?size=100&id=87356&format=png&color=000000" 
                             }
                             alt="Chevron"
                             width="20"
@@ -190,9 +181,9 @@ const FAQ = () => {
 const CustomContainer = () => {
     return (
         <div className="d-flex flex-column align-items-center justify-content-center">
-            <div className="position-relative custom-container overflow-hidden mt-100">
+            <div className="position-relative custom-container overflow-hidden mt-5">
                 <div className="position-absolute bg-white rounded-circle custom-circle"></div>
-                <div className="mt-5 d-flex align-items-center justify-content-end flex-column" style={{width: '100%'}}>
+                <div className="mt-3 d-flex align-items-center justify-content-end flex-column" style={{width: '100%'}}>
                     <StyledParagraphs />
 
                     <h2 className="custom-title">
@@ -239,8 +230,8 @@ const CustomContainer = () => {
             </div>
 
             <h3 className="mt-100 d-flex w-100 justify-content-center">Отвечаем на часто задаваемые вопросы</h3>
-            <div className="mt-5 position-relative mx-auto custom-container-bottom">
-                <div className="w-100 mt-5 d-flex align-items-center justify-content-end flex-column">
+            <div className="position-relative mx-auto custom-container-bottom p-1 mt-sm-3">
+                <div className="w-100 d-flex align-items-center justify-content-lg-end justify-content-md-end flex-column">
                     <FAQ />
                 </div>
             </div>
