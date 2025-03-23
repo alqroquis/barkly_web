@@ -1,54 +1,75 @@
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text;
-using System.Text.Json;
-using AspNet.Security.OAuth.Yandex;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using thatbuddy_jsapp.Server.Models;
+using thatbuddy_jsapp.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Добавление сервисов аутентификации
+// Настройка базы данных
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Добавление Identity
+builder.Services.AddIdentity<User, Role>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+// Настройка JWT
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
+
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = YandexAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-.AddCookie()
-.AddYandex("Yandex", options =>
+.AddJwtBearer(options =>
 {
-    options.ClientId = builder.Configuration["YandexAuth:ClientId"];
-    options.ClientSecret = builder.Configuration["YandexAuth:ClientSecret"];
-    options.CallbackPath = new PathString("/auth/yandex/callback");
-    options.AuthorizationEndpoint = "https://oauth.yandex.ru/authorize";
-    options.TokenEndpoint = "https://oauth.yandex.ru/token";
-})
-    .AddGoogle("Google", options =>
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.ClientId = builder.Configuration["GoogleAuth:ClientId"];
-        options.ClientSecret = builder.Configuration["GoogleAuth:ClientSecret"];
-    });
-
-builder.Services.AddControllers();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("https://localhost:5173",
-            "https://oauth.yandex.ru",
-            "https://localhost:7259")
-              .AllowCredentials()
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
 });
+
+// Добавление сервисов
+builder.Services.AddScoped<DatabaseService>();
+
+// Если используется класс Startup
+var startup = new Startup(builder.Configuration);
+startup.ConfigureServices(builder.Services);
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
+// Настройка middleware
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseRouting();
+
+// Аутентификация и авторизация
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
-app.Run();
 
+// Если используется класс Startup
+startup.Configure(app, app.Environment);
+
+app.Run();

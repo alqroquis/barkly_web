@@ -11,11 +11,11 @@ th, td {
     padding-right: 1rem;
 }
 
-p {
+p{
     z-index: 1;
 }
 
-h3 {
+ h3 {
     font-family: 'Roboto', sans-serif;
     font-style: normal;
     font-weight: 600;
@@ -26,93 +26,62 @@ h3 {
     margin-top: 50px;
 }
 
-.mt-100 {
-    margin-top: 100px;
-}
-
-.custom-container-bottom {
-    width: 1368px;
-    background: #CDE160;
-    border-radius: 50% 50% 30px 30px;
-    max-width: 100%;
-    min-height: 100px;
-}
+ .mt-100{
+     margin-top: 100px;
+ }
 
 .custom-container {
-    width: 100%; /* Сделаем ширину 100%, чтобы он занимал весь доступный экран */
-    height: 890px; /* Начальная высота для больших экранов */
+    width: 100%;
+    height: 890px;
     background: #CDE160;
     border-radius: 50px;
     overflow: hidden;
-    max-width: 100%; /* Адаптивность */
+    max-width: 100%; 
 }
 
 /* Для экранов с шириной больше 1200px (большие десктопы) */
 @media (min-width: 1200px) {
     .custom-container {
         width: 1368px;
-        height: 840px; 
+        height: 890px; 
     }
-
     .custom-circle {
-        width: 1470px;
-        height: 1370px; 
+        width: 1470px; /* Фиксированная ширина для очень больших экранов */
+        height: 1370px; /* Высота для больших экранов */
         top: -70%;
-    }
-
-    .custom-container-bottom {
-        padding-top: 50px;
-    }
-
-    .faq-item {
-        width: 400px !important;
     }
 }
 
 /* Для экранов с шириной от 992px до 1199px (средние десктопы) */
 @media (min-width: 768px) and (max-width: 1199px) {
     .custom-container {
-        width: 900px;
-        height: 840px;
+        width: 900px; /* Уменьшаем контейнер */
+        height: 890px; /* Немного меньше высота */
     }
 
     .custom-circle {
-        width: 950px;
-        height: 950px; 
+        width: 950px; /* Уменьшаем контейнер */
+        height: 950px; /* Немного меньше высота */
         top: -40%;
-    }
-
-    .custom-container-bottom {
-        padding-top: 50px;
-    }
-    .faq-item {
-        width: 400px !important;
     }
 }
 
 /* Для экранов с шириной от 768px до 991px (планшеты) */
 @media (min-width: 768px) and (max-width: 991px) {
-    .custom-container-bottom {
-        border-radius: 30px;
-    }
+  
 }
 
 /* Для экранов с шириной до 767px (мобильные устройства) */
 @media (max-width: 767px) {
     .custom-container {
         width: 600px;
-        height: 800px;
-        border-radius: 30px;
+        height: 890px; /* Контейнер станет ниже */
+        border-radius: 30px; /* Меньше закругление для мобильных */
     }
-
     .custom-circle {
-        width: 650px;
-        height: 650px;
+        width: 650px; /* Уменьшаем контейнер */
+        height: 650px; /* Немного меньше высота */
         top: -20%;
-    }
-
-    .custom-container-bottom {
-        border-radius: 30px;
     }
 }
 
@@ -120,18 +89,14 @@ h3 {
 @media (max-width: 567px) {
     .custom-container {
         width: 450px;
-        height: 800px;
-        border-radius: 30px;
+        height: 890px; /* Контейнер станет ниже */
+        border-radius: 30px; /* Меньше закругление для мобильных */
     }
 
     .custom-circle {
-        width: 150%;
-        height: 80%;
+        width: 450px; /* Уменьшаем контейнер */
+        height: 450px; /* Немного меньше высота */
         top: -20%;
-    }
-
-    .custom-container-bottom {
-        border-radius: 30px;
     }
 }
 
@@ -157,6 +122,7 @@ h3 {
     gap: 5px;
 }
 
+/* Общие стили для p */
 .custom-paragraph {
     font-family: 'Roboto', sans-serif;
     font-style: normal;
@@ -174,19 +140,21 @@ h3 {
     margin: 5px 0;
 }
 
+/* Четные элементы */
 .even {
     background: rgba(255, 255, 255, 0.29);
     border: 1px solid #000000;
     color: #000000;
 }
 
+/* Нечетные элементы */
 .odd {
     background: #CDE160;
     border: 1px solid #CDE160;
     color: white;
 }
 
-
+/* Заголовок */
 .custom-title {
     width: 339px;
     font-family: 'Roboto', sans-serif;
@@ -201,6 +169,7 @@ h3 {
     z-index: 1;
 }
 
+/* Стиль для текста "that’s my buddy" */
 .highlighted-text {
     display: inline-block;
     background: #CDE160;
@@ -211,6 +180,12 @@ h3 {
 /* Адаптация для мобильных */
 @media (max-width: 768px) {
 
+    .custom-circle {
+        width: 200%;
+        height: 200%;
+        top: -75%;
+    }
+
     .text-container {
         padding: 10px;
     }
@@ -219,11 +194,14 @@ h3 {
         font-size: 24px;
         width: auto;
     }
+}
 
-    .custom-container-bottom {
-        border-radius: 30px;
-        margin-top: 0;
-    }
+.custom-container-bottom {
+    width: 1368px;
+    background: #CDE160;
+    border-radius: 50% 50% 30px 30px;
+    max-width: 100%;
+    min-height: 100px;
 }
 
 .black-button {
@@ -258,3 +236,5 @@ h3 {
         background: #555555; /* Темнее при клике */
         border-color: #555555;
     }
+
+
