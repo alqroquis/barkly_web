@@ -43,7 +43,7 @@ namespace thatbuddy_jsapp.Server.Controllers
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             // Создаем нового пользователя
-            var user = new User
+            var user = new UserModel
             {
                 Email = request.Email,
                 PasswordHash = passwordHash,

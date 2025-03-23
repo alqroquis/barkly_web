@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
+using thatbuddy_jsapp.Server.Models;
 using thatbuddy_jsapp.Server.Services;
 
 namespace thatbuddy_jsapp.Server.Controllers
@@ -26,13 +27,13 @@ namespace thatbuddy_jsapp.Server.Controllers
             var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
             if (userGuid == null)
             {
-                return Unauthorized("Token validation failed or user ID not found");
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
             }
 
             var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
             if (user == null)
             {
-                return Unauthorized("Token validation failed or user ID not found");
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
             }
 
             if (page < 1 || limit < 1)
@@ -45,25 +46,18 @@ namespace thatbuddy_jsapp.Server.Controllers
             {
                 connection.Open();
 
-                // Рассчитываем OFFSET
                 int offset = (page - 1) * limit;
-
-                // Формируем SQL-запрос для получения пород
                 var query = @"
                     SELECT id, name
                     FROM breeds
                     ORDER BY name
                     LIMIT @limit
                     OFFSET @offset";
-
-                // Выполняем запрос
                 var breeds = connection.Query<IdName>(query, new { limit, offset }).ToList();
 
-                // Получаем общее количество пород (для пагинации)
                 var countQuery = "SELECT COUNT(*) FROM breeds";
                 int totalCount = connection.ExecuteScalar<int>(countQuery);
 
-                // Возвращаем результат
                 return Ok(new
                 {
                     TotalCount = totalCount,
@@ -73,6 +67,49 @@ namespace thatbuddy_jsapp.Server.Controllers
                 });
             }
         }
+
+
+        [HttpGet("frequencies")]
+        public async Task<IActionResult> SearchFrequencies(int page = 1, int limit = 40)
+        {
+            var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
+            if (userGuid == null)
+            {
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+            }
+
+            var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
+            if (user == null)
+            {
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+            }
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                int offset = (page - 1) * limit;
+                var query = @"
+                    SELECT id, name 
+                    FROM frequency
+                    ORDER BY name
+                    LIMIT @limit
+                    OFFSET @offset";
+                var list = connection.Query<IdName>(query, new { limit, offset }).ToList();
+
+                var countQuery = "SELECT COUNT(*) FROM breeds";
+                int totalCount = connection.ExecuteScalar<int>(countQuery);
+
+                return Ok(new
+                {
+                    TotalCount = totalCount,
+                    Page = page,
+                    Limit = limit,
+                    List = list
+                });
+            }
+        }
+
 
         public class IdName
         {

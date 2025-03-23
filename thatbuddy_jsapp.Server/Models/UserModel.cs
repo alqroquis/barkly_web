@@ -2,7 +2,7 @@
 
 namespace thatbuddy_jsapp.Server.Models
 {
-    public class User : IdentityUser<Guid>
+    public class UserModel : IdentityUser<Guid>
     {
         public string Email { get; set; }                  // Электронная почта
         public string PasswordHash { get; set; }           // Хеш пароля

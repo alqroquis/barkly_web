@@ -17,7 +17,7 @@ namespace thatbuddy_jsapp.Server.Services
             _configuration = configuration;
         }
 
-        public string GenerateAccessToken(User user)
+        public string GenerateAccessToken(UserModel user)
         {
             var claims = new[]
      {

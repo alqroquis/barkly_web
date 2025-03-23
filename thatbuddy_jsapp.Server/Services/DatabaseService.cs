@@ -33,7 +33,7 @@ namespace thatbuddy_jsapp.Server.Services
             return await command.ExecuteNonQueryAsync();
         }
 
-        public async Task<User?> GetUserByEmailAsync(string email)
+        public async Task<UserModel?> GetUserByEmailAsync(string email)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
@@ -44,11 +44,11 @@ namespace thatbuddy_jsapp.Server.Services
                created_at AS CreatedAt, updated_at AS UpdatedAt, deleted_at AS DeletedAt
         FROM users 
         WHERE email = @Email AND deleted_at IS NULL";
-            return await connection.QueryFirstOrDefaultAsync<User>(sql, new { Email = email });
+            return await connection.QueryFirstOrDefaultAsync<UserModel>(sql, new { Email = email });
         }
 
 
-        public async Task<User?> GetUserByIdAsync(Guid id)
+        public async Task<UserModel?> GetUserByIdAsync(Guid id)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
@@ -59,10 +59,10 @@ namespace thatbuddy_jsapp.Server.Services
                created_at AS CreatedAt, updated_at AS UpdatedAt, deleted_at AS DeletedAt
         FROM users 
         WHERE id = @Id AND deleted_at IS NULL";
-            return await connection.QueryFirstOrDefaultAsync<User>(sql, new { Id = id });
+            return await connection.QueryFirstOrDefaultAsync<UserModel>(sql, new { Id = id });
         }
 
-        public async Task CreateUserAsync(User user)
+        public async Task CreateUserAsync(UserModel user)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();

@@ -19,16 +19,6 @@ namespace thatbuddy_jsapp.Server.Controllers
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        [HttpGet("frequencies")]
-        public async Task<IActionResult> GetFrequencies()
-        {
-            await using var connection = new NpgsqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var sql = "SELECT id, name FROM frequency";
-            var frequencies = await connection.QueryAsync<Frequency>(sql);
-
-            return Ok(frequencies);
-        }
+        
     }
 }
