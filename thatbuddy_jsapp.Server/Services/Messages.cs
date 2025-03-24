@@ -53,5 +53,11 @@ namespace thatbuddy_jsapp.Server.Services
 
         [Display(Name = "Питомец с таким идентификатором не найден")]
         PetNotFound = 5002,
+
+        [Display(Name = "Список питомцев пуст")]
+        PetsNotFound = 5003,
+
+        [Display(Name = "У питомца еще нет медкарты")]
+        MedCardNotFound = 5004,
     }
 }

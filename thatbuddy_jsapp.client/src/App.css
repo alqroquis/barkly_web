@@ -39,63 +39,58 @@ p{
     max-width: 100%; 
 }
 
-/* Для экранов с шириной больше 1200px (большие десктопы) */
 @media (min-width: 1200px) {
     .custom-container {
         width: 1368px;
         height: 890px; 
     }
     .custom-circle {
-        width: 1470px; /* Фиксированная ширина для очень больших экранов */
-        height: 1370px; /* Высота для больших экранов */
+        width: 1470px;
+        height: 1370px;
         top: -70%;
     }
 }
 
-/* Для экранов с шириной от 992px до 1199px (средние десктопы) */
 @media (min-width: 768px) and (max-width: 1199px) {
     .custom-container {
-        width: 900px; /* Уменьшаем контейнер */
-        height: 890px; /* Немного меньше высота */
+        width: 900px;
+        height: 890px;
     }
 
     .custom-circle {
-        width: 950px; /* Уменьшаем контейнер */
-        height: 950px; /* Немного меньше высота */
+        width: 950px;
+        height: 950px;
         top: -40%;
     }
 }
 
-/* Для экранов с шириной от 768px до 991px (планшеты) */
 @media (min-width: 768px) and (max-width: 991px) {
   
 }
 
-/* Для экранов с шириной до 767px (мобильные устройства) */
 @media (max-width: 767px) {
     .custom-container {
         width: 600px;
-        height: 890px; /* Контейнер станет ниже */
-        border-radius: 30px; /* Меньше закругление для мобильных */
+        height: 890px;
+        border-radius: 30px;
     }
     .custom-circle {
-        width: 650px; /* Уменьшаем контейнер */
-        height: 650px; /* Немного меньше высота */
+        width: 650px;
+        height: 650px;
         top: -20%;
     }
 }
 
-/* Для экранов с шириной до 767px (мобильные устройства) */
 @media (max-width: 567px) {
     .custom-container {
         width: 450px;
-        height: 890px; /* Контейнер станет ниже */
-        border-radius: 30px; /* Меньше закругление для мобильных */
+        height: 890px;
+        border-radius: 30px;
     }
 
     .custom-circle {
-        width: 450px; /* Уменьшаем контейнер */
-        height: 450px; /* Немного меньше высота */
+        width: 450px;
+        height: 450px;
         top: -20%;
     }
 }
@@ -110,7 +105,7 @@ p{
 
 .text-container {
     position: relative;
-    z-index: 1; /* Чтобы текст был поверх круга */
+    z-index: 1;
     background: rgba(255, 255, 255, 0.29);
     padding: 20px;
     border-radius: 20px;
@@ -122,7 +117,6 @@ p{
     gap: 5px;
 }
 
-/* Общие стили для p */
 .custom-paragraph {
     font-family: 'Roboto', sans-serif;
     font-style: normal;
@@ -140,21 +134,18 @@ p{
     margin: 5px 0;
 }
 
-/* Четные элементы */
 .even {
     background: rgba(255, 255, 255, 0.29);
     border: 1px solid #000000;
     color: #000000;
 }
 
-/* Нечетные элементы */
 .odd {
     background: #CDE160;
     border: 1px solid #CDE160;
     color: white;
 }
 
-/* Заголовок */
 .custom-title {
     width: 339px;
     font-family: 'Roboto', sans-serif;
@@ -169,7 +160,6 @@ p{
     z-index: 1;
 }
 
-/* Стиль для текста "that’s my buddy" */
 .highlighted-text {
     display: inline-block;
     background: #CDE160;
@@ -177,7 +167,6 @@ p{
     padding: 5px 10px;
 }
 
-/* Адаптация для мобильных */
 @media (max-width: 768px) {
 
     .custom-circle {
@@ -214,7 +203,7 @@ p{
     align-items: center;
     justify-content: center;
     gap: 10px;
-    padding: 0 16px; /* Отступы по бокам */
+    padding: 0 16px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
@@ -228,13 +217,79 @@ p{
 }
 
     .black-button:hover {
-        background: #333333; /* Серый при наведении */
+        background: #333333;
         border-color: #333333;
     }
 
     .black-button:active {
-        background: #555555; /* Темнее при клике */
+        background: #555555;
         border-color: #555555;
     }
 
+.grey-rounded-container {
+    width: 100%;
+    height: 874px;
+    background: #F9F9F9;
+    border-radius: 25px 0px 0px 0px;
+    padding: 20px;
+}
+
+.green-button {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 9px 13px;
+    gap: 10px;
+    background: #CDE160;
+    border-radius: 20px;
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 16px;
+    color: #1E1E1E;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+    border: none;
+    outline: none;
+}
+
+.p-light {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 16px;
+    color: #7C7C7C;
+}
+h5 {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 16px;
+    color: #000000;
+}
+
+.black-button {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 9px 13px;
+    gap: 10px;
+    height: 34px;
+    background: #000000;
+    border: 1px solid #000000;
+    border-radius: 20px;
+    font-family: "Roboto", sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 16px;
+    color: #ffffff;
+}
 

@@ -223,20 +223,17 @@ const CustomContainer = () => {
                 </div>)}
             </div>
 
-
             <h3 className="mt-100 d-flex w-100 justify-content-center">Удобнее вести записи в приложении</h3>
             <div className="w-100 d-flex justify-content-center">
                 <AppInfo />
             </div>
 
-            <h3 className="mt-100 d-flex w-100 justify-content-center">Отвечаем на часто задаваемые вопросы</h3>
-            <div className="position-relative mx-auto custom-container-bottom p-1 mt-sm-3">
-                <div className="w-100 d-flex align-items-center justify-content-lg-end justify-content-md-end flex-column">
-                    <FAQ />
-                </div>
-            </div>
-
-
+            {/*<h3 className="mt-100 d-flex w-100 justify-content-center">Отвечаем на часто задаваемые вопросы</h3>*/}
+            {/*<div className="position-relative mx-auto custom-container-bottom p-1 mt-sm-3">*/}
+            {/*    <div className="w-100 d-flex align-items-center justify-content-lg-end justify-content-md-end flex-column">*/}
+            {/*        <FAQ />*/}
+            {/*    </div>*/}
+            {/*</div>*/}
         </div>
     );
 };

@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using System.Text;
@@ -17,6 +18,11 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
         private readonly DatabaseService _databaseService = databaseService;
 
 
+        /// <summary> 
+        /// Добавление питомца
+        /// </summary>
+        /// <param name="pet">Объект из тела запроса</param>
+        /// <returns>Возврщает Id созданного питомца</returns>
         [HttpPost("add")]
         public async Task<IActionResult> AddPet([FromBody] Pet pet)
         {
@@ -24,13 +30,13 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
             if (userGuid == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
 
             var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
             if (user == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
             #endregion
 
@@ -43,12 +49,12 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
             if (pet.Name == string.Empty)
             {
-                return BadRequest("Укажите кличку питомца.");
+                return BadRequest(new { Message = "Укажите кличку питомца." });
             }
 
             if (pet.BirthDate == null && pet.BirthDate > DateTime.UtcNow)
             {
-                return BadRequest("Укажите дату рождения питомца.");
+                return BadRequest(new { Message = "Укажите дату рождения питомца." });
             }
             #endregion
 
@@ -97,6 +103,11 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
         }
 
 
+        /// <summary>
+        /// Редактирование записи питомца
+        /// </summary>
+        /// <param name="petId">Id питомца</param>
+        /// <param name="petUpdate">Объект из тела запроса</param>
         [HttpPut("edit/{petId}")]
         public async Task<IActionResult> EditPet(long petId, [FromBody] PetUpdateDto petUpdate)
         {
@@ -104,13 +115,13 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
             if (userGuid == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
 
             var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
             if (user == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
             #endregion
 
@@ -119,10 +130,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             var pet = await GetPetByIdAsync(petId);
             if (pet == null || pet.UserId != user.Id)
             {
-                Console.WriteLine(pet?.Id.ToString());
-                Console.WriteLine(pet?.UserId.ToString());
-                Console.WriteLine(user.Id.ToString());
-                return NotFound(MessageHelper.GetMessageText(Messages.PetNotFound));
+                return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
             }
             #endregion
 
@@ -133,6 +141,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                 return BadRequest(ModelState);
             }
             #endregion
+
 
             #region Обновление данных питомца
             var updateQuery = new StringBuilder("UPDATE pets SET ");
@@ -208,6 +217,10 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
         }
 
 
+        /// <summary>
+        /// Получение формы питомца
+        /// </summary>
+        /// <param name="petId">Id питомца</param>
         [HttpGet("get/{petId}")]
         public async Task<IActionResult> GetPet(long petId)
         {
@@ -215,15 +228,16 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
             if (userGuid == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
 
             var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
             if (user == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
             #endregion
+
 
             #region Получение информации о питомце
             var query = @"
@@ -256,11 +270,11 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
                     if (petInfo == null)
                     {
-                        return NotFound(MessageHelper.GetMessageText(Messages.PetNotFound));
+                        return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
                     }
                     if (petInfo.UserName != user.Name)
                     {
-                        return BadRequest(MessageHelper.GetMessageText(Messages.AccessDenied));
+                        return BadRequest(new { Message = MessageHelper.GetMessageText(Messages.AccessDenied) });
                     }
 
                     return Ok(new
@@ -285,24 +299,17 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error retrieving pet info: {ex.Message}");
-                    return StatusCode(500, MessageHelper.GetMessageText(Messages.UnknownError));
+                    return StatusCode(500, new { Message = MessageHelper.GetMessageText(Messages.UnknownError) });
                 }
             }
             #endregion
         }
 
 
-        private async Task<Pet?> GetPetByIdAsync(long petId)
-        {
-            var query = "SELECT id, user_id as UserId, name, description, breed_id as BreedId, birth_date as BirthDate, stigma, microchip FROM pets WHERE id = @Id AND deleted_at IS NULL;";
-            using (var connection = new NpgsqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                return await connection.QueryFirstOrDefaultAsync<Pet>(query, new { Id = petId });
-            }
-        }
-
-
+        /// <summary>
+        /// Удаление питомца
+        /// </summary>
+        /// <param name="petId">Id питомца</param>
         [HttpDelete("delete/{petId}")]
         public async Task<IActionResult> DeletePet(long petId)
         {
@@ -310,23 +317,25 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
             if (userGuid == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
 
             var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
             if (user == null)
             {
-                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
             #endregion
+
 
             #region Проверка принадлежности питомца пользователю
             var pet = await GetPetByIdAsync(petId);
             if (pet == null || pet.UserId != user.Id)
             {
-                return NotFound(MessageHelper.GetMessageText(Messages.PetNotFound));
+                return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
             }
             #endregion
+
 
             #region Выполнение soft delete
             var query = @"
@@ -346,7 +355,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
                     if (affectedRows == 0)
                     {
-                        return NotFound(MessageHelper.GetMessageText(Messages.PetNotFound));
+                        return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
                     }
 
                     return Ok(new { Message = "Питомец успешно удален." });
@@ -354,10 +363,318 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error deleting pet: {ex.Message}");
-                    return StatusCode(500, MessageHelper.GetMessageText(Messages.UnknownError));
+                    return StatusCode(500, new { Message = MessageHelper.GetMessageText(Messages.UnknownError) });
                 }
             }
             #endregion
+        }
+
+
+        /// <summary>
+        /// Получение списка питомцев
+        /// </summary>
+        /// <returns>Список питомцев без дополнительной информации</returns>
+        [HttpGet("list")]
+        public async Task<IActionResult> ListPets()
+        {
+            #region Валидация пользователя
+            var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
+            if (userGuid == null)
+            {
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
+            }
+
+            var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
+            if (user == null)
+            {
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
+            }
+            #endregion
+
+
+            #region Получение списка питомцев пользователя
+            var query = @"
+                        SELECT 
+                            p.id AS PetId,
+                            p.name AS PetName
+                        FROM 
+                            pets p
+                        WHERE 
+                            p.user_id = @UserId 
+                            AND p.deleted_at IS NULL;";
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                try
+                {
+                    var pets = await connection.QueryAsync<PetInfo>(query, new { UserId = user.Id });
+
+                    if (pets == null || !pets.Any())
+                    {
+                        return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetsNotFound) });
+                    }
+
+                    // Формируем упрощенный ответ с Id и Name
+                    var result = pets.Select(p => new
+                    {
+                        Id = p.PetId,
+                        Name = p.PetName
+                    });
+
+                    return Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error retrieving pets list: {ex.Message}");
+                    return StatusCode(500, new { Message = MessageHelper.GetMessageText(Messages.UnknownError) });
+                }
+            }
+            #endregion
+        }
+
+
+        /// <summary>
+        /// Создание медицинской карты
+        /// </summary>
+        /// <param name="medicineCard">Объект из тела запроса</param>
+        /// <param name="petId">Id питомца</param>
+        /// <returns>Id созданной карты</returns>
+        [HttpPost("add-medicine-card/{petId}")]
+        public async Task<IActionResult> AddMedicineCard([FromBody] MedicineCard medicineCard, long petId)
+        {
+            #region Валидация пользователя
+            var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
+            if (userGuid == null)
+            {
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
+            }
+
+            var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
+            if (user == null)
+            {
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
+            }
+            #endregion
+
+
+            #region Проверка принадлежности питомца пользователю
+            var pet = await GetPetByIdAsync(petId);
+            if (pet == null || pet.UserId != user.Id)
+            {
+                return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+            #endregion
+
+
+            #region Проверка существования медицинской карты
+            var existingMedicineCard = await _databaseService.GetMedicineCardByPetIdAsync(petId);
+            if (existingMedicineCard != null)
+                return BadRequest(new { Message = "Медицинская карта питомца уже существует." });
+            #endregion
+
+
+            #region Валидация полей
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var insertQuery = new StringBuilder("INSERT INTO med_cards (");
+            var insertValues = new StringBuilder("VALUES (");
+            var parameters = new DynamicParameters();
+            insertQuery.Append("pet_id, ");
+            insertValues.Append("@Id, ");
+            parameters.Add("Id", petId);
+            if (medicineCard.Allergies != null)
+            {
+                insertQuery.Append("allergies, ");
+                insertValues.Append("@Allergies, ");
+                parameters.Add("Allergies", medicineCard.Allergies);
+            }
+            if (medicineCard.Weight != null)
+            {
+                insertQuery.Append("weight, ");
+                insertValues.Append("@Weight, ");
+                parameters.Add("Weight", medicineCard.Weight);
+            }
+            if (medicineCard.FeedTypeId != null)
+            {
+                insertQuery.Append("feed_type_id, ");
+                insertValues.Append("@FeedTypeId, ");
+                parameters.Add("FeedTypeId", medicineCard.FeedTypeId);
+            }
+            if (medicineCard.FeedingFrequency != null)
+            {
+                insertQuery.Append("feeding_frequency, ");
+                insertValues.Append("@FeedingFrequency, ");
+                parameters.Add("FeedingFrequency", medicineCard.FeedingFrequency);
+            }
+            if (medicineCard.Ingredients != null)
+            {
+                insertQuery.Append("ingredients, ");
+                insertValues.Append("@Ingredients, ");
+                parameters.Add("Ingredients", medicineCard.Ingredients);
+            }
+            if (medicineCard.ServingSize != null)
+            {
+                insertQuery.Append("serving_size, ");
+                insertValues.Append("@ServingSize, ");
+                parameters.Add("ServingSize", medicineCard.ServingSize);
+            }
+            if (medicineCard.FeaturesOfCare != null)
+            {
+                insertQuery.Append("features_of_care, ");
+                insertValues.Append("@FeaturesOfCare, ");
+                parameters.Add("FeaturesOfCare", medicineCard.FeaturesOfCare);
+            }
+            insertQuery.Append("created_at");
+            insertValues.Append("now()");
+            #endregion
+
+
+            #region Добавление медицинской карты
+            insertQuery.Append(") ");
+            insertValues.Append(") RETURNING id;");
+            var finalInsertQuery = insertQuery.ToString() + insertValues.ToString();
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                try
+                {
+                    var medicineCardId = await connection.ExecuteScalarAsync<long>(finalInsertQuery, parameters);
+
+                    return Ok(new
+                    {
+                        Id = medicineCardId
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при добавлении медицинской карты: {ex.Message}");
+                    return StatusCode(500, new { Message = MessageHelper.GetMessageText(Messages.UnknownError) });
+                }
+            }
+            #endregion
+        }
+
+
+        /// <summary>
+        /// Получение формы медицинской карты
+        /// </summary>
+        /// <param name="petId">Id питомца</param>
+        [HttpGet("get-medicine-card/{petId}")]
+        public async Task<IActionResult> GetMedicineCard(long petId)
+        {
+            #region Валидация пользователя
+            var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
+            if (userGuid == null)
+            {
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
+            }
+
+            var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
+            if (user == null)
+            {
+                return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
+            }
+            #endregion
+
+            #region Получение информации о питомце
+            var query = @"
+                        SELECT  m.id as Id, 
+		                        m.pet_id as PetId, 
+		                        p.name as PetName,
+		                        p.user_id as UserId,
+		                        u.name as UserName,
+		                        m.weight as Weight, 
+		                        m.allergies as Allergies, 
+		                        m.feed_type_id as FeedTypeId, 
+		                        f.name as FeedTypeName,
+		                        m.feeding_frequency as FeedingFrequency, 
+		                        m.ingredients as Ingredients, 
+		                        m.serving_size as ServingSize, 
+		                        m.features_of_care as FeaturesOfCare,
+		                        m.created_at as CreatedAt, 
+		                        m.updated_at as UpdatedAt 
+                        FROM public.med_cards m
+		                        inner join pets p on p.id = m.pet_id and 
+							                         p.deleted_at is NULL 
+		                        inner join users u on u.id = p.user_id and 
+							                          u.deleted_at is NULL
+		                        inner join feed_types f on f.id = m.feed_type_id
+                        WHERE m.deleted_at is NULL and 
+		                      m.pet_id = @PetId;";
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                try
+                {
+                    var medInfo = await connection.QueryFirstOrDefaultAsync<MedInfo>(query, new { PetId = petId });
+
+                    if (medInfo == null)
+                    {
+                        return NotFound(new { Message = MessageHelper.GetMessageText(Messages.MedCardNotFound) });
+                    }
+                    if (medInfo.UserName != user.Name)
+                    {
+                        return BadRequest(new { Message = MessageHelper.GetMessageText(Messages.AccessDenied) });
+                    }
+
+                    return Ok(new
+                    {
+                        Id = medInfo.Id,
+                        Pet = new {
+                            Id = medInfo.PetId,
+                            Name = medInfo.PetName
+                        },
+                       User = new
+                       {
+                           Id = medInfo.UserId,
+                           Name = medInfo.UserName
+                       },
+                        Weight = medInfo.Weight,
+                        Allergies = medInfo.Allergies,
+                        FeedType = new
+                        {
+                            Id = medInfo.FeedTypeId,
+                            Name = medInfo.FeedTypeName
+                        },
+                        FeedingFrequency = medInfo.FeedingFrequency,
+                        Ingredients = medInfo.Ingredients,
+                        ServingSize = medInfo.ServingSize,
+                        FeaturesOfCare = medInfo.FeaturesOfCare,
+                        CreatedAt = medInfo.CreatedAt,
+                        UpdatedAt = medInfo.UpdatedAt
+
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error retrieving med info: {ex.Message}");
+                    return StatusCode(500, new { Message = MessageHelper.GetMessageText(Messages.UnknownError) });
+                }
+            }
+            #endregion
+        }
+
+
+        /// <summary>
+        /// Получение питомца по Id для проверки существования записи
+        /// </summary>
+        /// <param name="petId">Id питомца</param>
+        private async Task<Pet?> GetPetByIdAsync(long petId)
+        {
+            var query = "SELECT id, user_id as UserId, name, description, breed_id as BreedId, birth_date as BirthDate, stigma, microchip FROM pets WHERE id = @Id AND deleted_at IS NULL;";
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                return await connection.QueryFirstOrDefaultAsync<Pet>(query, new { Id = petId });
+            }
         }
     }
 
@@ -385,5 +702,37 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
         public int? BreedId { get; set; }
         public Guid UserId { get; set; }
         public required string UserName { get; set; } 
+    }
+
+
+    public class MedicineCard
+    {
+        public double? Weight { get; set; }
+        public string? Allergies { get; set; }
+        public short? FeedTypeId { get; set; }
+        public short? FeedingFrequency { get; set; }
+        public string? Ingredients { get; set; }
+        public short? ServingSize { get; set; }
+        public string? FeaturesOfCare { get; set; }
+    }
+
+
+    public class MedInfo
+    {
+        public long Id { get; set; }
+        public long PetId { get; set; }
+        public string? PetName { get; set; }
+        public Guid UserId { get; set; }
+        public string? UserName { get; set; }
+        public double? Weight { get; set; }
+        public string? Allergies { get; set; }
+        public short? FeedTypeId { get; set; }
+        public string? FeedTypeName { get; set; }
+        public short? FeedingFrequency { get; set; }
+        public string? Ingredients { get; set; }
+        public short? ServingSize { get; set; }
+        public string? FeaturesOfCare { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

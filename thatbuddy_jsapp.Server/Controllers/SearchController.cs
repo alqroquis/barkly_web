@@ -1,28 +1,21 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
-using thatbuddy_jsapp.Server.Models;
 using thatbuddy_jsapp.Server.Services;
 
 namespace thatbuddy_jsapp.Server.Controllers
 {
     [ApiController]
     [Route("api/search")]
-    public class SearchController : ControllerBase
+    public class SearchController(DatabaseService databaseService, TokenService tokenService, IConfiguration configuration) : ControllerBase
     {
-        private readonly string _connectionString;
-        private readonly TokenService _tokenService;
-        private readonly DatabaseService _databaseService;
+        private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")!;
+        private readonly TokenService _tokenService = tokenService;
+        private readonly DatabaseService _databaseService = databaseService;
 
-        public SearchController(DatabaseService databaseService, TokenService tokenService, IConfiguration configuration)
-        {
-            _databaseService = databaseService;
-            _tokenService = tokenService;
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
-        }
 
         [HttpGet("breeds")]
-        public async Task<IActionResult> SearchBreeds(int page = 1, int limit = 40)
+        public async Task<IActionResult> SearchBreeds(string query = "", int page = 1, int limit = 40)
         {
             var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
             if (userGuid == null)
@@ -35,7 +28,6 @@ namespace thatbuddy_jsapp.Server.Controllers
             {
                 return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
             }
-
             if (page < 1 || limit < 1)
             {
                 page = 1;
@@ -44,19 +36,30 @@ namespace thatbuddy_jsapp.Server.Controllers
 
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
 
                 int offset = (page - 1) * limit;
-                var query = @"
-                    SELECT id, name
-                    FROM breeds
-                    ORDER BY name
-                    LIMIT @limit
-                    OFFSET @offset";
-                var breeds = connection.Query<IdName>(query, new { limit, offset }).ToList();
 
-                var countQuery = "SELECT COUNT(*) FROM breeds";
-                int totalCount = connection.ExecuteScalar<int>(countQuery);
+                var sqlQuery = @"
+                                SELECT id, name
+                                FROM breeds
+                                WHERE (@query = '' OR name ILIKE @query)
+                                ORDER BY name
+                                LIMIT @limit
+                                OFFSET @offset";
+
+                var parameters = new
+                {
+                    query = $"%{query}%",
+                    limit,
+                    offset
+                };
+                var breeds = await connection.QueryAsync<IdName>(sqlQuery, parameters);
+                var countQuery = @"
+                                    SELECT COUNT(*)
+                                    FROM breeds
+                                    WHERE (@query = '' OR name ILIKE @query)";
+                int totalCount = await connection.ExecuteScalarAsync<int>(countQuery, new { query = $"%{query}%" });
 
                 return Ok(new
                 {
@@ -64,6 +67,64 @@ namespace thatbuddy_jsapp.Server.Controllers
                     Page = page,
                     Limit = limit,
                     Breeds = breeds
+                });
+            }
+        }
+
+
+        [HttpGet("feed-types")]
+        public async Task<IActionResult> SearchFeedTypes(string query = "", int page = 1, int limit = 40)
+        {
+            var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
+            if (userGuid == null)
+            {
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+            }
+
+            var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
+            if (user == null)
+            {
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+            }
+            if (page < 1 || limit < 1)
+            {
+                page = 1;
+                limit = 40;
+            }
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                int offset = (page - 1) * limit;
+
+                var sqlQuery = @"
+                                SELECT id, name
+                                FROM feed_types
+                                WHERE (@query = '' OR name ILIKE @query)
+                                ORDER BY name
+                                LIMIT @limit
+                                OFFSET @offset";
+
+                var parameters = new
+                {
+                    query = $"%{query}%",
+                    limit,
+                    offset
+                };
+                var types = await connection.QueryAsync<IdName>(sqlQuery, parameters);
+                var countQuery = @"
+                                    SELECT COUNT(*)
+                                    FROM feed_types
+                                    WHERE (@query = '' OR name ILIKE @query)";
+                int totalCount = await connection.ExecuteScalarAsync<int>(countQuery, new { query = $"%{query}%" });
+
+                return Ok(new
+                {
+                    TotalCount = totalCount,
+                    Page = page,
+                    Limit = limit,
+                    FeedTypes = types
                 });
             }
         }

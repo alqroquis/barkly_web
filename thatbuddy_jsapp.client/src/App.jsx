@@ -5,6 +5,9 @@ import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home";
 import Footer from "./components/footer";
 import React from "react";
+import { ToastContainer } from "react-toastify";
+import Profile from '../src/pages/Profile';
+import "react-toastify/dist/ReactToastify.css";
 
 
 function App() {
@@ -13,10 +16,22 @@ function App() {
             <Navbar />
             <Router>
                 <Routes>
-                    <Route path="/" element={<Home/>} />
+                    <Route path="/" element={<Home />} />
+                    <Route path="/profile" element={<Profile />} />
                 </Routes>
             </Router>
-            <Footer/>
+            <Footer />
+            <ToastContainer
+                position="bottom-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+            />
         </AuthProvider>
     );
 }

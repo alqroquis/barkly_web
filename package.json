@@ -4,6 +4,8 @@
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
     "react-bootstrap": "^2.10.9",
-    "react-router-dom": "^7.3.0"
+    "react-bootstrap-typeahead": "^6.4.1",
+    "react-router-dom": "^7.3.0",
+    "react-toastify": "^11.0.5"
   }
 }

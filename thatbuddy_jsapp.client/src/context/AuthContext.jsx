@@ -2,6 +2,9 @@ import { createContext, useState, useEffect } from "react";
 import axios from "axios";
 import React from "react";
 import PropTypes from 'prop-types';
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { getUser } from '../functions/users';
 
 const AuthContext = createContext();
 
@@ -10,29 +13,49 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        axios.get("/auth/profile", { withCredentials: true })
-            .then((res) => {
-                setUser(res.data);
-            })
-            .catch(() => setUser(null))
-            .finally(() => setLoading(false));
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
     }, []);
 
-    const loginWithYandex = () => {
-        window.location.href = "https://localhost:51739/auth/login/yandex"; // URL ������ �������
+    // Обработчик отправки формы входа
+    const handleLogin = async (login, password) => {
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email: login, password: password }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Неверный логин или пароль");
+            }
+            const data = await response.json();
+            toast.success(data.message);
+            let userInfo = await getUser();
+            setUser(userInfo);
+            localStorage.setItem("user", JSON.stringify(userInfo));
+        } catch (error) {
+            console.error("Ошибка входа, вызываю toast...", error.message);
+            toast.error(error.message);
+        }
     };
 
     const logout = async () => {
         await axios.get("/auth/logout", { withCredentials: true });
-        // �������������� �������� ����� ������
+        setUser(null);
+        localStorage.removeItem("user");
     };
 
     return (
         <AuthContext.Provider value={{
             user,
+            handleLogin,
             loading,
-            loginWithGoogle: () => { },
-            loginWithYandex: loginWithYandex,
             logout
         }}>
             {children}

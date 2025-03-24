@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using Dapper;
 using Npgsql;
+using thatbuddy_jsapp.Server.Controllers.Pets;
 using thatbuddy_jsapp.Server.Models;
 
 
@@ -80,6 +81,14 @@ namespace thatbuddy_jsapp.Server.Services
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
             });
+        }
+
+        public async Task<MedicineCard?> GetMedicineCardByPetIdAsync(long petId)
+        {
+            await using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+            var query = "SELECT * FROM med_cards WHERE pet_id = @PetId AND deleted_at IS NULL;";
+            return await connection.QueryFirstOrDefaultAsync<MedicineCard>(query, new { PetId = petId });
         }
 
         public async Task UpdateUserRefreshTokenAsync(Guid userId, string refreshToken, DateTime refreshTokenExpiryTime)

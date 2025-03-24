@@ -31,18 +31,15 @@ namespace thatbuddy_jsapp.Server.Controllers
             _configuration = configuration;
         }
 
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            // Проверяем, существует ли пользователь с таким email
             var existingUser = await _databaseService.GetUserByEmailAsync(request.Email);
             if (existingUser != null)
-                return BadRequest("User with this email already exists");
-
-            // Хешируем пароль
+                return BadRequest(new { Message = "Пользователь с указанным логином уже существует." });
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-            // Создаем нового пользователя
             var user = new UserModel
             {
                 Email = request.Email,
@@ -53,42 +50,36 @@ namespace thatbuddy_jsapp.Server.Controllers
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // Сохраняем пользователя в базе данных
             await _databaseService.CreateUserAsync(user);
 
-            return Ok(new { Message = "User registered successfully" });
+            return Ok(new { Message = "Успешно!" });
         }
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            // Получаем пользователя по email
             var user = await _databaseService.GetUserByEmailAsync(request.Email);
             if (user == null)
-                return Unauthorized("User not found");
+                return Unauthorized(new { Message = "Пользователь с указанным логином не найден." });
 
-            // Проверяем пароль (здесь можно использовать библиотеку для хеширования, например, BCrypt)
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                return Unauthorized("Invalid password");
-
-            // Генерируем Access Token и Refresh Token
+                return Unauthorized(new { Message = "Неверный пароль." });
             var accessToken = _tokenService.GenerateAccessToken(user);
             var refreshToken = _tokenService.GenerateRefreshToken();
 
-            // Обновляем Refresh Token в базе данных
             user.RefreshToken = refreshToken;
-            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(double.Parse(_configuration["Jwt:RefreshTokenExpirationDays"]));
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(double.Parse(_configuration["Jwt:RefreshTokenExpirationDays"]!));
             await _databaseService.UpdateUserRefreshTokenAsync(user.Id, refreshToken, user.RefreshTokenExpiryTime);
            
             Response.Cookies.Append("AccessToken", accessToken, new CookieOptions
             {
-                HttpOnly = true, // Защита от XSS
-                Secure = true, // Только HTTPS
-                SameSite = SameSiteMode.Strict, // Защита от CSRF
-                Expires = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"])) // Время жизни cookie
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"]!))
             });
 
-            // Записываем Refresh Token в cookie (опционально)
             Response.Cookies.Append("RefreshToken", refreshToken, new CookieOptions
             {
                 HttpOnly = true,
@@ -97,62 +88,67 @@ namespace thatbuddy_jsapp.Server.Controllers
                 Expires = user.RefreshTokenExpiryTime
             });
 
-            return Ok(new
-            {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken
-            });
+            return Ok(new { Message = "Успешно!" });
         }
+
+
         [HttpGet("current-user")]
         public async Task<IActionResult> GetCurrentUser()
         {
             var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
             if (userGuid == null)
             {
-                return Unauthorized("Token validation failed or user ID not found");
+                return Unauthorized(new { Message = "Token validation failed or user ID not found" });
             }
 
-            // Получаем пользователя из базы данных
             var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
             if (user == null)
             {
-                return NotFound("User not found");
+                return NotFound(new { Message = "User not found" });
             }
 
-            return Ok(user);
+            return Ok(new
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                Role = user.Role,
+                LogoUrl = user.LogoUrl,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt,
+            });
         }
+
 
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            // Удаляем Access Token cookie
             Response.Cookies.Delete("AccessToken");
-
-            // Удаляем Refresh Token cookie (если используется)
             Response.Cookies.Delete("RefreshToken");
 
-            return Ok(new { Message = "Logout successful" });
+            return Ok(new { Message = "Успешно!" });
         }
+
 
         //[HttpPost("refresh-token")]
         //public async Task<IActionResult> RefreshToken()
         //{
-        //    // Получаем Refresh Token из cookie
-        //    var refreshToken = Request.Cookies["RefreshToken"];
+        //    Получаем Refresh Token из cookie
+        //   var refreshToken = Request.Cookies["RefreshToken"];
 
         //    if (string.IsNullOrEmpty(refreshToken))
         //        return Unauthorized("Refresh token is missing");
 
-        //    // Получаем пользователя по Refresh Token
-        //    var user = await _databaseService.GetUserByRefreshTokenAsync(refreshToken);
+        //    Получаем пользователя по Refresh Token
+        //   var user = await _databaseService.GetUserByRefreshTokenAsync(refreshToken);
 
         //    if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
         //        return Unauthorized("Invalid refresh token");
 
-        //    // Генерируем новый Access Token
+        //    Генерируем новый Access Token
         //    var newAccessToken = _tokenService.GenerateAccessToken(user);
 
-        //    // Обновляем Access Token в cookie
+        //    Обновляем Access Token в cookie
         //    Response.Cookies.Append("AccessToken", newAccessToken, new CookieOptions
         //    {
         //        HttpOnly = true,
