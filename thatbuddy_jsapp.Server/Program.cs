@@ -43,13 +43,11 @@ builder.Services.AddAuthentication(options =>
 // Добавление сервисов
 builder.Services.AddScoped<DatabaseService>();
 
-// Если используется класс Startup
 var startup = new Startup(builder.Configuration);
 startup.ConfigureServices(builder.Services);
 
 var app = builder.Build();
 
-// Настройка middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -62,14 +60,10 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
-// Аутентификация и авторизация
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Если используется класс Startup
 startup.Configure(app, app.Environment);
 
 app.Run();

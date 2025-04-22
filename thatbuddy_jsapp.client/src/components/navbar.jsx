@@ -35,7 +35,7 @@ const Navbar = () => {
                             <a className="nav-link" href="/">Скачать</a>
                         </li>
                         <li className="nav-item">
-                            <a className="nav-link" href="#">Карты</a>
+                            <a className="nav-link" href="/maps">Карты</a>
                         </li>
                         <li className="nav-item">
                             <a className="nav-link" href="#">Приюты</a>

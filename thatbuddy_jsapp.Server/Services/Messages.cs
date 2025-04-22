@@ -35,6 +35,12 @@ namespace thatbuddy_jsapp.Server.Services
         [Display(Name = "Доступ к записи ограничен")]
         AccessDenied = 1005,
 
+        [Display(Name = "Запись не найдена.")]
+        NotFound = 1006,
+
+        [Display(Name = "Успешно.")]
+        Success = 1007,
+
         // Ошибки пагинации
         [Display(Name = "Некорректные параметры пагинации.")]
         InvalidPaginationParameters = 2001,

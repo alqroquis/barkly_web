@@ -14,6 +14,13 @@ namespace thatbuddy_jsapp.Server.Controllers
         private readonly DatabaseService _databaseService = databaseService;
 
 
+        /// <summary>
+        /// Поиск по списку пород
+        /// </summary>
+        /// <param name="query">Поисковый запрос</param>
+        /// <param name="page">Страница</param>
+        /// <param name="limit">Количествол записей на странице</param>
+        /// <returns>Список пород</returns>
         [HttpGet("breeds")]
         public async Task<IActionResult> SearchBreeds(string query = "", int page = 1, int limit = 40)
         {
@@ -72,6 +79,13 @@ namespace thatbuddy_jsapp.Server.Controllers
         }
 
 
+        /// <summary>
+        /// Поиск по типам корма
+        /// </summary>
+        /// <param name="query">Поисковый запрос</param>
+        /// <param name="page">Страница</param>
+        /// <param name="limit">Количествол записей на странице</param>
+        /// <returns>Список типов корма</returns>
         [HttpGet("feed-types")]
         public async Task<IActionResult> SearchFeedTypes(string query = "", int page = 1, int limit = 40)
         {
@@ -130,6 +144,77 @@ namespace thatbuddy_jsapp.Server.Controllers
         }
 
 
+        /// <summary>
+        /// Поиск по типам лекарств
+        /// </summary>
+        /// <param name="query">Поисковый запрос</param>
+        /// <param name="page">Страница</param>
+        /// <param name="limit">Количествол записей на странице</param>
+        /// <returns>Список типов лекарства</returns>
+        [HttpGet("treatment-types")]
+        public async Task<IActionResult> SearchTreatmentTypes(string query = "", int page = 1, int limit = 40)
+        {
+            var userGuid = _tokenService.ValidateTokenAndGetClaims(Request);
+            if (userGuid == null)
+            {
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+            }
+
+            var user = await _databaseService.GetUserByIdAsync(userGuid.Value);
+            if (user == null)
+            {
+                return Unauthorized(MessageHelper.GetMessageText(Messages.InvalidOrMissingToken));
+            }
+            if (page < 1 || limit < 1)
+            {
+                page = 1;
+                limit = 40;
+            }
+
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                int offset = (page - 1) * limit;
+
+                var sqlQuery = @"
+                                SELECT id, name
+                                FROM treatment_types
+                                WHERE (@query = '' OR name ILIKE @query)
+                                ORDER BY name
+                                LIMIT @limit
+                                OFFSET @offset";
+
+                var parameters = new
+                {
+                    query = $"%{query}%",
+                    limit,
+                    offset
+                };
+                var types = await connection.QueryAsync<IdName>(sqlQuery, parameters);
+                var countQuery = @"
+                                    SELECT COUNT(*)
+                                    FROM treatment_types
+                                    WHERE (@query = '' OR name ILIKE @query)";
+                int totalCount = await connection.ExecuteScalarAsync<int>(countQuery, new { query = $"%{query}%" });
+
+                return Ok(new
+                {
+                    TotalCount = totalCount,
+                    Page = page,
+                    Limit = limit,
+                    TreatmentTypes = types
+                });
+            }
+        }
+
+
+        /// <summary>
+        /// Поиск по частоте напоминаний
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="limit"></param>
+        /// <returns></returns>
         [HttpGet("frequencies")]
         public async Task<IActionResult> SearchFrequencies(int page = 1, int limit = 40)
         {
@@ -172,6 +257,9 @@ namespace thatbuddy_jsapp.Server.Controllers
         }
 
 
+        /// <summary>
+        /// Модель записи поиска
+        /// </summary>
         public class IdName
         {
             public int Id { get; set; }

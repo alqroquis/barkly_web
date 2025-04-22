@@ -1,9 +1,7 @@
 ﻿using Dapper;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using System.Text;
-using System.Xml.Linq;
 using thatbuddy_jsapp.Server.Models.Pets;
 using thatbuddy_jsapp.Server.Services;
 
@@ -73,7 +71,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                 var insertQuery = @"
             INSERT INTO pets (breed_id, birth_date, logo_url, name, stigma, microchip, description, user_id, created_at)
             VALUES (@BreedId, @BirthDate, @LogoUrl, @Name, @Stigma, @Microchip, @Description, @UserId, now())
-            RETURNING id;"; 
+            RETURNING id;";
 
                 try
                 {
@@ -127,7 +125,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
 
             #region Проверка принадлежности питомца пользователю
-            var pet = await GetPetByIdAsync(petId);
+            var pet = await _databaseService.GetPetByIdAsync(petId);
             if (pet == null || pet.UserId != user.Id)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
@@ -135,12 +133,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             #endregion
 
 
-            #region Валидация полей
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            #endregion
+            
 
 
             #region Обновление данных питомца
@@ -329,7 +322,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
 
             #region Проверка принадлежности питомца пользователю
-            var pet = await GetPetByIdAsync(petId);
+            var pet = await _databaseService.GetPetByIdAsync(petId);
             if (pet == null || pet.UserId != user.Id)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
@@ -460,7 +453,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
 
             #region Проверка принадлежности питомца пользователю
-            var pet = await GetPetByIdAsync(petId);
+            var pet = await _databaseService.GetPetByIdAsync(petId);
             if (pet == null || pet.UserId != user.Id)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
@@ -584,29 +577,93 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
             #region Получение информации о питомце
             var query = @"
-                        SELECT  m.id as Id, 
-		                        m.pet_id as PetId, 
-		                        p.name as PetName,
-		                        p.user_id as UserId,
-		                        u.name as UserName,
-		                        m.weight as Weight, 
-		                        m.allergies as Allergies, 
-		                        m.feed_type_id as FeedTypeId, 
-		                        f.name as FeedTypeName,
-		                        m.feeding_frequency as FeedingFrequency, 
-		                        m.ingredients as Ingredients, 
-		                        m.serving_size as ServingSize, 
-		                        m.features_of_care as FeaturesOfCare,
-		                        m.created_at as CreatedAt, 
-		                        m.updated_at as UpdatedAt 
-                        FROM public.med_cards m
-		                        inner join pets p on p.id = m.pet_id and 
-							                         p.deleted_at is NULL 
-		                        inner join users u on u.id = p.user_id and 
-							                          u.deleted_at is NULL
-		                        inner join feed_types f on f.id = m.feed_type_id
-                        WHERE m.deleted_at is NULL and 
-		                      m.pet_id = @PetId;";
+                        WITH last_treatments AS (
+                            SELECT DISTINCT ON (pet_id, treatment_type_id)
+                                id,
+                                pet_id,
+                                treatment_type_id,
+                                description,
+                                treatment_date
+                            FROM 
+                                treatments
+                            WHERE 
+                                deleted_at IS NULL
+                                AND treatment_type_id IN (1, 2)
+                            ORDER BY 
+                                pet_id, treatment_type_id, treatment_date DESC
+                        ),
+                        last_injury AS (
+                            SELECT DISTINCT ON (pet_id)
+                                id,
+		                        pet_id,
+                                name,
+                                injury_date
+                            FROM 
+                                injuries
+                            WHERE 
+                                deleted_at IS NULL
+                            ORDER BY 
+                                pet_id, injury_date DESC
+                        ),
+                        last_chronic_disease AS (
+                            SELECT DISTINCT ON (pet_id)
+                                id,
+                                name,
+		                        pet_id,
+                                created_at
+                            FROM 
+                                chronic_diseases
+                            WHERE 
+                                deleted_at IS NULL
+                            ORDER BY 
+                                pet_id, created_at DESC
+                        )
+                         SELECT  m.id as Id, 
+                                 m.pet_id as PetId, 
+                                 p.name as PetName,
+                                 p.user_id as UserId,
+                                 u.name as UserName,
+                                 m.weight as Weight, 
+                                 m.allergies as Allergies, 
+                                 m.feed_type_id as FeedTypeId, 
+                                 f.name as FeedTypeName,
+                                 m.feeding_frequency as FeedingFrequency, 
+                                 m.ingredients as Ingredients, 
+                                 m.serving_size as ServingSize, 
+                                 m.features_of_care as FeaturesOfCare,
+		 
+		                         lt1.id as LastTicksTreatmentId,
+	                             lt1.description as LastTicksTreatmentDesc,
+	                             lt1.treatment_date as LastTicksTreatmentDate,
+		 
+	                             lt2.id as LastFleasTreatmentId,
+	                             lt2.description as LastFleasTreatmentDesc,
+	                             lt2.treatment_date as LastFleasTreatmentDate,
+		 
+		                         li.id as LastInjuryId,
+	                             li.name as LastInjuryName,
+	                             li.injury_date as LastInjuryDate,
+
+		                         lcd.id as LastChronicDiseaseId,
+	                             lcd.name as LastChronicDiseaseName,
+	                             lcd.created_at as LastChronicDiseaseDate,
+	
+                                 m.created_at as CreatedAt, 
+                                 m.updated_at as UpdatedAt 
+                         FROM public.med_cards m
+                                 inner join pets p on p.id = m.pet_id and 
+					                                   p.deleted_at is NULL 
+                                 inner join users u on u.id = p.user_id and 
+					                                    u.deleted_at is NULL
+                                 inner join feed_types f on f.id = m.feed_type_id 
+		                         left outer join last_treatments lt1 on lt1.pet_id = m.pet_id and 
+		 										                         lt1.treatment_type_id = 1 
+		                         left outer join last_treatments lt2 on lt2.pet_id = m.pet_id and 
+		 										                         lt2.treatment_type_id = 2
+		                         LEFT JOIN last_injury li ON li.pet_id = m.pet_id
+    	                         LEFT JOIN last_chronic_disease lcd ON lcd.pet_id = m.pet_id
+                         WHERE m.deleted_at is NULL and 
+		                       m.pet_id = @PetId;";
 
             using (var connection = new NpgsqlConnection(_connectionString))
             {
@@ -627,29 +684,54 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
                     return Ok(new
                     {
-                        Id = medInfo.Id,
-                        Pet = new {
+                        medInfo.Id,
+                        Pet = new
+                        {
                             Id = medInfo.PetId,
                             Name = medInfo.PetName
                         },
-                       User = new
-                       {
-                           Id = medInfo.UserId,
-                           Name = medInfo.UserName
-                       },
-                        Weight = medInfo.Weight,
-                        Allergies = medInfo.Allergies,
+                        User = new
+                        {
+                            Id = medInfo.UserId,
+                            Name = medInfo.UserName
+                        },
+                        medInfo.Weight,
+                        medInfo.Allergies,
                         FeedType = new
                         {
                             Id = medInfo.FeedTypeId,
                             Name = medInfo.FeedTypeName
                         },
-                        FeedingFrequency = medInfo.FeedingFrequency,
-                        Ingredients = medInfo.Ingredients,
-                        ServingSize = medInfo.ServingSize,
-                        FeaturesOfCare = medInfo.FeaturesOfCare,
-                        CreatedAt = medInfo.CreatedAt,
-                        UpdatedAt = medInfo.UpdatedAt
+                        medInfo.FeedingFrequency,
+                        medInfo.Ingredients,
+                        medInfo.ServingSize,
+                        medInfo.FeaturesOfCare,
+                        LastTicksTreatment = new
+                        {
+                            Id = medInfo.LastTicksTreatmentId,
+                            Desc = medInfo.LastTicksTreatmentDesc,
+                            TreatmentDate = medInfo.LastTicksTreatmentDate
+                        },
+                        LastFleasTreatment = new
+                        {
+                            Id = medInfo.LastFleasTreatmentId,
+                            Desc = medInfo.LastFleasTreatmentDesc,
+                            TreatmentDate = medInfo.LastFleasTreatmentDate
+                        },
+                        LastInjury = new
+                        {
+                            Id = medInfo.LastInjuryId,
+                            Name = medInfo.LastInjuryName,
+                            Date = medInfo.LastInjuryDate
+                        },
+                        LastChronicDisease = new
+                        {
+                            Id = medInfo.LastChronicDiseaseId,
+                            Name = medInfo.LastChronicDiseaseName,
+                            Date = medInfo.LastChronicDiseaseDate
+                        },
+                        medInfo.CreatedAt,
+                        medInfo.UpdatedAt
 
                     });
                 }
@@ -661,24 +743,12 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             }
             #endregion
         }
-
-
-        /// <summary>
-        /// Получение питомца по Id для проверки существования записи
-        /// </summary>
-        /// <param name="petId">Id питомца</param>
-        private async Task<Pet?> GetPetByIdAsync(long petId)
-        {
-            var query = "SELECT id, user_id as UserId, name, description, breed_id as BreedId, birth_date as BirthDate, stigma, microchip FROM pets WHERE id = @Id AND deleted_at IS NULL;";
-            using (var connection = new NpgsqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                return await connection.QueryFirstOrDefaultAsync<Pet>(query, new { Id = petId });
-            }
-        }
     }
 
 
+    /// <summary>
+    /// Модель обновления записи о питомцев
+    /// </summary>
     public class PetUpdateDto
     {
         public string? Name { get; set; }
@@ -690,6 +760,9 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
     }
 
 
+    /// <summary>
+    /// Модель записи питомца для вывода в список
+    /// </summary>
     public class PetInfo
     {
         public long PetId { get; set; }
@@ -701,10 +774,13 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
         public string? BreedName { get; set; }
         public int? BreedId { get; set; }
         public Guid UserId { get; set; }
-        public required string UserName { get; set; } 
+        public required string UserName { get; set; }
     }
 
 
+    /// <summary>
+    /// Модель медицинской карты
+    /// </summary>
     public class MedicineCard
     {
         public double? Weight { get; set; }
@@ -717,22 +793,30 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
     }
 
 
-    public class MedInfo
+    /// <summary>
+    /// Модель медицинской карты для вывода в список
+    /// </summary>
+    public class MedInfo : MedicineCard
     {
         public long Id { get; set; }
         public long PetId { get; set; }
         public string? PetName { get; set; }
         public Guid UserId { get; set; }
         public string? UserName { get; set; }
-        public double? Weight { get; set; }
-        public string? Allergies { get; set; }
-        public short? FeedTypeId { get; set; }
         public string? FeedTypeName { get; set; }
-        public short? FeedingFrequency { get; set; }
-        public string? Ingredients { get; set; }
-        public short? ServingSize { get; set; }
-        public string? FeaturesOfCare { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public long? LastTicksTreatmentId { get; set; }
+        public string? LastTicksTreatmentDesc { get; set; }
+        public DateTime? LastTicksTreatmentDate { get; set; }
+        public long? LastFleasTreatmentId { get; set; }
+        public string? LastFleasTreatmentDesc { get; set; }
+        public DateTime? LastFleasTreatmentDate { get; set; }
+        public long? LastInjuryId { get; set; }
+        public string? LastInjuryName { get; set; }
+        public DateTime? LastInjuryDate { get; set; }
+        public long? LastChronicDiseaseId { get; set; }
+        public string? LastChronicDiseaseName { get; set; }
+        public DateTime? LastChronicDiseaseDate { get; set; }
     }
 }

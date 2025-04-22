@@ -3,14 +3,20 @@ using Dapper;
 using Npgsql;
 using thatbuddy_jsapp.Server.Controllers.Pets;
 using thatbuddy_jsapp.Server.Models;
+using thatbuddy_jsapp.Server.Models.Pets;
 
 
 namespace thatbuddy_jsapp.Server.Services
 {
     public class DatabaseService(IConfiguration configuration)
     {
-        private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection");
+        private readonly string _connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <returns></returns>
         public async Task<DataTable> ExecuteQueryAsync(string sql)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
@@ -25,6 +31,12 @@ namespace thatbuddy_jsapp.Server.Services
             return dataTable;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <returns></returns>
         public async Task<int> ExecuteNonQueryAsync(string sql)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
@@ -34,6 +46,12 @@ namespace thatbuddy_jsapp.Server.Services
             return await command.ExecuteNonQueryAsync();
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
         public async Task<UserModel?> GetUserByEmailAsync(string email)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
@@ -49,6 +67,11 @@ namespace thatbuddy_jsapp.Server.Services
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public async Task<UserModel?> GetUserByIdAsync(Guid id)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
@@ -63,6 +86,12 @@ namespace thatbuddy_jsapp.Server.Services
             return await connection.QueryFirstOrDefaultAsync<UserModel>(sql, new { Id = id });
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
         public async Task CreateUserAsync(UserModel user)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
@@ -83,6 +112,12 @@ namespace thatbuddy_jsapp.Server.Services
             });
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="petId"></param>
+        /// <returns></returns>
         public async Task<MedicineCard?> GetMedicineCardByPetIdAsync(long petId)
         {
             await using var connection = new NpgsqlConnection(_connectionString);
@@ -91,6 +126,29 @@ namespace thatbuddy_jsapp.Server.Services
             return await connection.QueryFirstOrDefaultAsync<MedicineCard>(query, new { PetId = petId });
         }
 
+
+        /// <summary>
+        /// Получение питомца по Id для проверки существования записи
+        /// </summary>
+        /// <param name="petId">Id питомца</param>
+        public async Task<Pet?> GetPetByIdAsync(long petId)
+        {
+            var query = "SELECT id, user_id as UserId, name, description, breed_id as BreedId, birth_date as BirthDate, stigma, microchip FROM pets WHERE id = @Id AND deleted_at IS NULL;";
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                return await connection.QueryFirstOrDefaultAsync<Pet>(query, new { Id = petId });
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="refreshToken"></param>
+        /// <param name="refreshTokenExpiryTime"></param>
+        /// <returns></returns>
         public async Task UpdateUserRefreshTokenAsync(Guid userId, string refreshToken, DateTime refreshTokenExpiryTime)
         {
             await using var connection = new NpgsqlConnection(_connectionString);

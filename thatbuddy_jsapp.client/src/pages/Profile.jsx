@@ -1,26 +1,43 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Container, Row, Col, Card } from "react-bootstrap";
-import { petsList, petsGet, petAdd } from '../functions/pets';
+import { petsList, petsGet, petAdd, medCardGet, petUpdate } from '../functions/pets';
+import { documentsList, documentsUpload } from '../functions/documents';
 import defaultLogo from '../assets/default.svg';
+import { toast } from "react-toastify";
 import { AsyncTypeahead } from "react-bootstrap-typeahead";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 
 
-const BreedSearch = ({ onChange }) => {
+const BreedSearch = ({ value, onChange }) => {
     const [breeds, setBreeds] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [breed, setBreed] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedBreed, setSelectedBreed] = useState(value || []);
+
+    useEffect(() => {
+        setSelectedBreed(value || []);
+    }, [value]);
+
+
+    useEffect(() => {
+        fetch(`/api/search/breeds`, { method: "GET", credentials: "include" }).then((response) => {
+            return response.json();
+        }).then((data) => {
+            setBreeds(data.breeds);
+            setPage(1);
+            setHasMore(data.totalCount > data.breeds?.length);
+        });
+    }, []);
+
 
     const handleSearch = async (query) => {
         setIsLoading(true);
-        setSearchQuery(query); 
+        setSearchQuery(query);
         try {
-            const response = await fetch(`/api/search/breeds?query=${query}&page=1`, {method: "GET", credentials: "include"});
+            const response = await fetch(`/api/search/breeds?query=${query}&page=1`, { method: "GET", credentials: "include" });
             const data = await response.json();
-            console.log(data.breeds);
             setBreeds(data.breeds);
             setPage(1);
             setHasMore(data.totalCount > data.breeds?.length);
@@ -67,14 +84,15 @@ const BreedSearch = ({ onChange }) => {
             options={breeds}
             onSearch={handleSearch}
             onChange={(selected) => {
-                setBreed(selected); 
-                onChange(selected[0] || null);
+                setSelectedBreed(selected);
+                onChange(selected);
             }}
             onInputChange={(text) => handleSearch(text)}
-            selected={breed}
+            selected={selectedBreed}
             labelKey="name"
             renderMenuItemChildren={(option) => <div>{option.name}</div>}
             onScroll={handleScroll}
+            defaultInputValue={selectedBreed[0]?.name}
         />
     );
 };
@@ -127,7 +145,6 @@ const AddPetModal = ({ show, onHide, onSave }) => {
             alert("Заполните поля Имя и Дата рождения");
             return;
         }
-        console.log(breed);
         onSave({ name: name, breedId: breed.id, birthDate: new Date(`${birthdate}T12:30:52.673Z`).toISOString(), stigma: stigma, microchip: microchip, description: description });
 
         onHide();
@@ -159,10 +176,134 @@ const AddPetModal = ({ show, onHide, onSave }) => {
                         <Form.Label>Дата рождения</Form.Label>
                         <Form.Control
                             type="date"
-                            max={new Date().toISOString().split("T")[0]} 
+                            max={new Date().toISOString().split("T")[0]}
                             value={birthdate}
                             onChange={(e) => setBirthdate(e.target.value)}
                         />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formPetStigma">
+                        <Form.Label>Номер клейма</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Введите номер клейма"
+                            value={stigma}
+                            onChange={(e) => setStigma(e.target.value)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formPetMicrochip">
+                        <Form.Label>Номер микрочипа</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Введите номер микрочипа"
+                            value={microchip}
+                            onChange={(e) => setMicrochip(e.target.value)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formPetDescription">
+                        <Form.Label>Описание питомца</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            placeholder="Введите описание питомца"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={onHide}>
+                    Отмена
+                </Button>
+                <Button variant="primary" onClick={handleSave}>
+                    Сохранить
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    );
+};
+
+
+const EditPetModal = ({ show, onHide, onSave, pet }) => {
+    const [name, setName] = useState("");
+    const [breed, setBreed] = useState(null);
+    const [birthdate, setBirthdate] = useState("");
+    const [stigma, setStigma] = useState("");
+    const [microchip, setMicrochip] = useState("");
+    const [description, setDescription] = useState("");
+
+    useEffect(() => {
+        if (pet) {
+            setName(pet.name || "");
+            setBirthdate(pet.birthdate?.split("T")[0] || "");
+            setStigma(pet.stigma || "");
+            setMicrochip(pet.microchip || "");
+            setDescription(pet.description || "");
+        }
+    }, [pet]);
+
+    useEffect(() => {
+        if (pet?.breed) {
+            setBreed([pet.breed]);
+        }
+    }, [pet]);
+
+    const handleSave = () => {
+        if (!name || !birthdate) {
+            alert("Заполните поля Имя и Дата рождения");
+            return;
+        }
+        onSave({
+            name: name,
+            breedId: breed?.[0]?.id || null,
+            birthDate: new Date(birthdate).toISOString(),
+            stigma: stigma,
+            microchip: microchip,
+            description: description
+        });
+        onHide();
+    };
+
+    return (
+        <Modal show={show} onHide={onHide} centered>
+            <Modal.Header closeButton>
+                <Modal.Title>Редактировать данные питомца</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Form>
+                    <Form.Group className="mb-3" controlId="formPetName">
+                        <Form.Label>Имя питомца</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Введите имя"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formPetBreed">
+                        <Form.Label>Порода</Form.Label>
+                        <BreedSearch
+                            value={breed}
+                            onChange={(selected) => setBreed(selected)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formPetBirthdate">
+                        <Form.Label>Дата рождения</Form.Label>
+                        <Form.Control
+                            type="date"
+                            max={new Date().toISOString().split("T")[0]}
+                            value={birthdate}
+                            onChange={(e) => setBirthdate(e.target.value)}
+                        />
+                        {/* Для отладки можно добавить: */}
+                        <small className="text-muted">
+                            Текущее значение: {birthdate || "не установлено"}
+                        </small>
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="formPetStigma">
@@ -354,10 +495,18 @@ class Profile extends React.Component {
         this.state = {
             reminders: [],
             pet: null,
-            activeTab: "Общее"
+            medcard: null,
+            activeTab: "Общее",
+            showEditModal: false,
+            documents: [],
+            showDownloadModal: false,
+            selectedDocument: null,
+            showEmbeddedView: false
         };
         this.fetchPet = this.fetchPet.bind(this);
         this.handleTabClick = this.handleTabClick.bind(this);
+        this.toggleEditModal = this.toggleEditModal.bind(this);
+        this.handleSavePet = this.handleSavePet.bind(this);
     }
 
 
@@ -372,9 +521,58 @@ class Profile extends React.Component {
 
 
     fetchPet = async (id) => {
-        this.setState({ pet: null });
+        this.setState({ activeTab: "Общее" });
+        this.setState({ pet: null, medcard: null });
         let petInfo = await petsGet(id);
-        this.setState({ pet: petInfo });
+        let medcardInfo = await medCardGet(id);
+        this.setState({ pet: petInfo, medcard: medcardInfo });
+        await this.fetchDocuments(id);
+    };
+
+    fetchDocuments = async (petId) => {
+        const documents = await documentsList(petId);
+        this.setState({ documents });
+    };
+
+    handleAddDocument = async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await documentsUpload(this.state.pet.id, formData);
+        await this.fetchDocuments(this.state.pet.id);
+    };
+
+    isViewableType = (fileType) => {
+        return (
+            fileType.startsWith('image/') ||
+            fileType === 'application/pdf' ||
+            fileType === 'text/plain'
+        );
+    };
+
+    handleDownloadDocument = async (doc) => {
+        try {
+            const response = await fetch(`/api/documents/${doc.id}?download=true`, {
+                method: 'get',
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Download failed');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = doc.originalName || 'document';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (error) {
+            toast.error(error.message || 'Не удалось скачать файл');
+        }
     };
 
 
@@ -382,16 +580,53 @@ class Profile extends React.Component {
         this.setState({ activeTab: tab });
     };
 
+    toggleEditModal = () => {
+        this.setState(prevState => ({
+            showEditModal: !prevState.showEditModal
+        }));
+    };
+
+    handleSavePet = async (updatedPetInfo) => {
+        try {
+            const updatedPet = await petUpdate(this.state.pet.id, updatedPetInfo);
+            this.setState({
+                pet: updatedPet,
+                showEditModal: false
+            });
+        } catch (error) {
+
+        }
+    };
+
+    handleDeleteDocument = async (documentId) => {
+        try {
+            await fetch(`/api/documents/${documentId}`, {
+                method: 'DELETE',
+            });
+            this.setState(prevState => ({
+                documents: prevState.documents.filter(doc => doc.id !== documentId)
+            }));
+        } catch (error) {
+            toast.error(error.message || 'Не удалось удалить файл');
+        }
+    };
+
+
+    getFileIcon = (fileType) => {
+        if (fileType.startsWith('image/')) return '🖼️';
+        if (fileType === 'application/pdf') return '📄';
+        if (fileType === 'text/plain') return '📝';
+        return '📁';
+    };
 
     render() {
-        const { reminders, pet, activeTab } = this.state;
+        const { reminders, pet, activeTab, medcard, showEditModal, documents, showDownloadModal, selectedDocument, showEmbeddedView } = this.state;
         const tabs = ["Общее", "Медицинская карта", "Документы", "Соревнования", "Статистика", "Прием лекарств"];
 
         return (
             <Container fluid style={{ marginTop: 100 }}>
                 <h1 style={{ marginBottom: "20px" }}>Личный кабинет</h1>
                 <Row>
-                    {/* Левая колонка: Напоминания */}
                     <Col md={4}>
                         <h2 style={{ marginBottom: "20px" }}>Напоминания</h2>
                         {reminders !== null && reminders?.map((reminder) => (
@@ -399,7 +634,6 @@ class Profile extends React.Component {
                         ))}
                     </Col>
 
-                    {/* Правая колонка: Мои питомцы */}
                     <Col md={8}>
                         <h2 style={{ marginBottom: "20px" }}>Мои питомцы</h2>
                         <PetsColumn onSelectedPetChange={this.fetchPet} />
@@ -434,11 +668,13 @@ class Profile extends React.Component {
                                     </Button>
                                 ))}
                             </div>
+
+
                             {activeTab === "Общее" && pet !== null &&
                                 <div style={{ display: 'flex', gap: 15, flexDirection: 'column' }}>
                                     <div style={{ display: 'flex', gap: 20, alignItems: 'center', justifyContent: 'space-between' }}>
                                         <h5>Информация о питомце</h5>
-                                        <button className="black-button" onClick={() => { }}>
+                                        <button className="black-button" onClick={this.toggleEditModal}>
                                             Редактировать
                                         </button>
                                     </div>
@@ -449,13 +685,18 @@ class Profile extends React.Component {
                                     </div>
 
                                     <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Описание: </label>
+                                        <p>{pet.description || "Не указано"}</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
                                         <label className="p-light">Порода: </label>
-                                        <p>{pet.breed?.name ?? "Порода не указана"}</p>
+                                        <p>{pet.breed?.name || "Порода не указана"}</p>
                                     </div>
 
                                     <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
                                         <label className="p-light">Дата рождения: </label>
-                                        <p>{formatBirthdate(pet.birthdate) ?? "Дата рождения не указана"}</p>
+                                        <p>{formatBirthdate(pet.birthdate) || "Дата рождения не указана"}</p>
                                     </div>
 
                                     <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
@@ -467,9 +708,186 @@ class Profile extends React.Component {
                                         <label className="p-light">Номер клейма: </label>
                                         <p>{pet.stigma?.length > 0 ? pet.stigma : "Не указан"}</p>
                                     </div>
+
+                                    <EditPetModal
+                                        show={showEditModal}
+                                        onHide={this.toggleEditModal}
+                                        onSave={this.handleSavePet}
+                                        pet={pet}
+                                    />
+                                </div>}
+
+
+                            {activeTab === "Медицинская карта" && medcard !== null &&
+                                <div style={{ display: 'flex', gap: 15, flexDirection: 'column' }}>
+                                    <div style={{ display: 'flex', gap: 20, alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <h5>Медицинские данные</h5>
+                                        <button className="black-button" onClick={() => { }}>
+                                            Редактировать
+                                        </button>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Вес: </label>
+                                        <p>{`${medcard?.weight} кг` ?? "Не указан"}</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Тип корма: </label>
+                                        <p>{medcard?.feedType?.name?.length > 0 ? medcard?.feedType?.name : "Не указан"}</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Частота кормления (раз в день): </label>
+                                        <p>{medcard?.feedingFrequency ?? "Не указан"}</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Состав корма: </label>
+                                        <p>{medcard?.ingredients?.length > 0 ? medcard?.ingredients : "Не указан"}</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Размер порции (в граммах): </label>
+                                        <p>{medcard?.servingSize ?? "Не указан"}</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Другие особенности ухода: </label>
+                                        <p>{medcard?.featuresOfCare?.length > 0 ? medcard?.featuresOfCare : "Не указан"}</p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: 5, flexDirection: 'column' }}>
+                                        <label className="p-light">Последняя обработка от гельминтов: </label>
+                                        <p>{(medcard?.lastTicksTreatment?.desc + ' ' + formatBirthdate(medcard?.lastTicksTreatment?.treatmentDate)) ?? "Не указаны"}</p>
+                                    </div>
+
+                                </div>}
+
+
+                            {activeTab === "Документы" &&
+                                <div style={{ display: 'flex', gap: 15, flexDirection: 'column' }}>
+                                    <div style={{ display: 'flex', gap: 20, alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <h5>Документы</h5>
+                                        <input
+                                            type="file"
+                                            onChange={(e) => this.handleAddDocument(e.target.files[0])}
+                                            style={{ display: 'none' }}
+                                            id="document-upload"
+                                        />
+                                        <label
+                                            htmlFor="document-upload"
+                                            className="black-button"
+                                            style={{ cursor: 'pointer', margin: 0 }}
+                                        >
+                                            Добавить документ
+                                        </label>
+                                    </div>
+
+                                    {documents.length === 0 ? (
+                                        <p>Нет загруженных документов</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {documents.map(doc => (
+                                                <div
+                                                    key={doc.id}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        padding: '10px',
+                                                        border: '1px solid #eee',
+                                                        borderRadius: '5px'
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <span style={{ fontSize: '20px' }}>{this.getFileIcon(doc.fileType)}</span>
+                                                        <span>{doc.originalName}</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                                        <button
+                                                            className="black-button"
+                                                            onClick={() => this.handleDownloadDocument(doc, true)}
+                                                        >
+                                                            Скачать
+                                                        </button>
+                                                        <button
+                                                            className="black-button"
+                                                            onClick={() => this.handleDeleteDocument(doc.id)}
+                                                        >
+                                                            Удалить
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {showEmbeddedView && (
+                                        <div style={{
+                                            position: 'fixed',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            bottom: 0,
+                                            backgroundColor: 'rgba(0,0,0,0.8)',
+                                            zIndex: 1000,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            padding: '20px'
+                                        }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'flex-end',
+                                                marginBottom: '10px'
+                                            }}>
+                                                <button
+                                                    className="black-button"
+                                                    onClick={() => this.setState({ showEmbeddedView: false })}
+                                                >
+                                                    Закрыть
+                                                </button>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                {this.renderEmbeddedView()}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {showDownloadModal && (
+                                        <div style={{
+                                            position: 'fixed',
+                                            top: '50%',
+                                            left: '50%',
+                                            transform: 'translate(-50%, -50%)',
+                                            backgroundColor: 'white',
+                                            padding: '20px',
+                                            borderRadius: '5px',
+                                            zIndex: 1000,
+                                            boxShadow: '0 0 10px rgba(0,0,0,0.2)'
+                                        }}>
+                                            <p>Этот тип файла нельзя просмотреть в браузере. Хотите скачать его?</p>
+                                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                                                <button
+                                                    className="black-button"
+                                                    onClick={() => {
+                                                        this.handleDownloadDocument(selectedDocument, true);
+                                                        this.setState({ showDownloadModal: false });
+                                                    }}
+                                                >
+                                                    Скачать
+                                                </button>
+                                                <button
+                                                    className="black-button"
+                                                    onClick={() => this.setState({ showDownloadModal: false })}
+                                                >
+                                                    Отмена
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>}
                         </div>
-
                     </Col>
                 </Row>
             </Container>

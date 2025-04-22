@@ -13,7 +13,6 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        // Настройка сервисов
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -46,6 +45,7 @@ public class Startup
         services.AddControllers();
         services.AddSwaggerGen();
         services.AddScoped<TokenService>();
+        services.AddScoped<IFileService, FileService>();
         services.AddCors(options =>
         {
             options.AddPolicy("AllowFrontend", policy =>
@@ -59,7 +59,6 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        // Настройка middleware
         app.UseCors("AllowFrontend");
         app.UseAuthentication();
         app.UseRouting();

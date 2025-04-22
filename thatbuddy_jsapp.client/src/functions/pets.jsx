@@ -1,5 +1,4 @@
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 
 export async function petsList() {
     try {
@@ -39,6 +38,25 @@ export async function petsGet(id) {
 }
 
 
+export async function medCardGet(id) {
+    try {
+        const response = await fetch(`/api/pets/get-medicine-card/${id}`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        toast.error(error.message);
+    }
+}
+
+
 export async function petAdd(petInfo) {
     try {
         const response = await fetch(`/api/pets/add`, {
@@ -55,7 +73,31 @@ export async function petAdd(petInfo) {
             throw new Error(errorData.message);
         }
         const data = await response.json();
-        toast.success("�������!");
+        toast.success("Успешно!");
+        return data;
+    } catch (error) {
+        toast.error(error.message);
+    }
+}
+
+
+export async function petUpdate(petId, petInfo) {
+    try {
+        const response = await fetch(`/api/pets/edit/${petId}`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: "include",
+            body: JSON.stringify(petInfo)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message);
+        }
+        const data = await response.json();
+        toast.success("Данные питомца успешно обновлены!");
         return data;
     } catch (error) {
         toast.error(error.message);

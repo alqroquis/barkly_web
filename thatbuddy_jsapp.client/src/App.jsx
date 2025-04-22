@@ -8,7 +8,7 @@ import React from "react";
 import { ToastContainer } from "react-toastify";
 import Profile from '../src/pages/Profile';
 import "react-toastify/dist/ReactToastify.css";
-
+import HeatmapPage from '../src/pages/Maps';
 
 function App() {
     return (
@@ -18,6 +18,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/profile" element={<Profile />} />
+                    <Route path="/maps" element={<HeatmapPage />} />
                 </Routes>
             </Router>
             <Footer />
