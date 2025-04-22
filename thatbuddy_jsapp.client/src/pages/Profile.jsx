@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Container, Row, Col, Card } from "react-bootstrap";
-import { petsList, petsGet, petAdd, medCardGet, petUpdate } from '../functions/pets';
+import { petsList, petsGet, petAdd, medCardGet, petUpdate, medCardUpdate} from '../functions/pets';
 import { documentsList, documentsUpload } from '../functions/documents';
 import defaultLogo from '../assets/default.svg';
 import { toast } from "react-toastify";
@@ -93,6 +93,95 @@ const BreedSearch = ({ value, onChange }) => {
             renderMenuItemChildren={(option) => <div>{option.name}</div>}
             onScroll={handleScroll}
             defaultInputValue={selectedBreed[0]?.name}
+        />
+    );
+};
+
+
+const FeedTypeSearch = ({ value, onChange }) => {
+    const [feedTypes, setFeedTypes] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedFeedType, setSelectedFeedType] = useState(value || []);
+
+    useEffect(() => {
+        setSelectedFeedType(value || []);
+    }, [value]);
+
+
+    useEffect(() => {
+        fetch(`/api/search/feed-types`, { method: "GET", credentials: "include" }).then((response) => {
+            return response.json();
+        }).then((data) => {
+            setFeedTypes(data.feedTypes);
+            setPage(1);
+            setHasMore(data.totalCount > data.feedTypes?.length);
+        });
+    }, []);
+
+
+    const handleSearch = async (query) => {
+        setIsLoading(true);
+        setSearchQuery(query);
+        try {
+            const response = await fetch(`/api/search/feed-types?query=${query}&page=1`, { method: "GET", credentials: "include" });
+            const data = await response.json();
+            setFeedTypes(data.feedTypes);
+            setPage(1);
+            setHasMore(data.totalCount > data.feedTypes?.length);
+        } catch (error) {
+            console.error("Ошибка при поиске пород:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
+    const handleLoadMore = async () => {
+        if (!hasMore || isLoading) return;
+
+        setIsLoading(true);
+        try {
+            const response = await fetch(`/api/search/feed-types?query=${searchQuery}&page=${page + 1}`, { method: "GET", credentials: "include" });
+            const data = await response.json();
+            setFeedTypes((prevTypes) => [...prevTypes, ...data.feedTypes]);
+            setPage((prevPage) => prevPage + 1);
+            setHasMore(data?.totalCount > feedTypes?.length + data.feedTypes?.length);
+        } catch (error) {
+            console.error("Ошибка при загрузке пород:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
+    const handleScroll = (event) => {
+        const { scrollTop, scrollHeight, clientHeight } = event.target;
+        if (scrollHeight - scrollTop === clientHeight && hasMore && !isLoading) {
+            handleLoadMore();
+        }
+    };
+
+
+    return (
+        <AsyncTypeahead
+            id="feed-search"
+            placeholder="Введите тип корма"
+            isLoading={isLoading}
+            options={feedTypes}
+            onSearch={handleSearch}
+            onChange={(selected) => {
+                setSelectedFeedType(selected);
+                onChange(selected);
+            }}
+            onInputChange={(text) => handleSearch(text)}
+            selected={selectedFeedType}
+            labelKey="name"
+            renderMenuItemChildren={(option) => <div>{option.name}</div>}
+            onScroll={handleScroll}
+            defaultInputValue={selectedFeedType[0]?.name}
         />
     );
 };
@@ -228,20 +317,20 @@ const AddPetModal = ({ show, onHide, onSave }) => {
 
 
 const EditPetModal = ({ show, onHide, onSave, pet }) => {
-    const [name, setName] = useState("");
+    const [name, setName] = useState(null);
     const [breed, setBreed] = useState(null);
-    const [birthdate, setBirthdate] = useState("");
-    const [stigma, setStigma] = useState("");
-    const [microchip, setMicrochip] = useState("");
-    const [description, setDescription] = useState("");
+    const [birthdate, setBirthdate] = useState(null);
+    const [stigma, setStigma] = useState(null);
+    const [microchip, setMicrochip] = useState(null);
+    const [description, setDescription] = useState(null);
 
     useEffect(() => {
         if (pet) {
-            setName(pet.name || "");
-            setBirthdate(pet.birthdate?.split("T")[0] || "");
-            setStigma(pet.stigma || "");
-            setMicrochip(pet.microchip || "");
-            setDescription(pet.description || "");
+            setName(pet.name || null);
+            setBirthdate(pet.birthdate?.split("T")[0] || null);
+            setStigma(pet.stigma || null);
+            setMicrochip(pet.microchip || null);
+            setDescription(pet.description || null);
         }
     }, [pet]);
 
@@ -334,6 +423,135 @@ const EditPetModal = ({ show, onHide, onSave, pet }) => {
                             placeholder="Введите описание питомца"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
+                        />
+                    </Form.Group>
+                </Form>
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={onHide}>
+                    Отмена
+                </Button>
+                <Button variant="primary" onClick={handleSave}>
+                    Сохранить
+                </Button>
+            </Modal.Footer>
+        </Modal>
+    );
+};
+
+
+const EditMedicineCardModal = ({ show, onHide, onSave, medicineCard, petId }) => {
+    const [allergies, setAllergies] = useState(null);
+    const [weight, setWeight] = useState(null);
+    const [feedType, setFeedType] = useState(null);
+    const [feedingFrequency, setFeedingFrequency] = useState(null);
+    const [ingredients, setIngredients] = useState(null);
+    const [servingSize, setServingSize] = useState(null);
+    const [featuresOfCare, setFeaturesOfCare] = useState(null);
+
+    useEffect(() => {
+        if (medicineCard) {
+            setAllergies(medicineCard.allergies || null);
+            setWeight(medicineCard.weight || null);
+            setFeedType(medicineCard.feedType ? [medicineCard.feedType] : null);
+            setFeedingFrequency(medicineCard.feedingFrequency || null);
+            setIngredients(medicineCard.ingredients || null);
+            setServingSize(medicineCard.servingSize || null);
+            setFeaturesOfCare(medicineCard.featuresOfCare || null);
+        }
+    }, [medicineCard]);
+
+    const handleSave = () => {
+        onSave({
+            allergies: allergies,
+            weight: weight ? parseFloat(weight) : null,
+            feedTypeId: feedType?.[0]?.id || null,
+            feedingFrequency: feedingFrequency ? parseInt(feedingFrequency) : null,
+            ingredients: ingredients,
+            servingSize: servingSize ? parseInt(servingSize) : null,
+            featuresOfCare: featuresOfCare
+        });
+        onHide();
+    };
+
+    return (
+        <Modal show={show} onHide={onHide} centered>
+            <Modal.Header closeButton>
+                <Modal.Title>Редактировать медицинскую карту</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Form>
+                    <Form.Group className="mb-3" controlId="formAllergies">
+                        <Form.Label>Аллергии</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={2}
+                            placeholder="Укажите аллергии"
+                            value={allergies || ''}
+                            onChange={(e) => setAllergies(e.target.value || null)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formWeight">
+                        <Form.Label>Вес (кг)</Form.Label>
+                        <Form.Control
+                            type="number"
+                            step="0.1"
+                            placeholder="Укажите вес"
+                            value={weight || ''}
+                            onChange={(e) => setWeight(e.target.value || null)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formFeedType">
+                        <Form.Label>Тип корма</Form.Label>
+                        <FeedTypeSearch
+                            value={feedType}
+                            onChange={(selected) => setFeedType(selected)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formFeedingFrequency">
+                        <Form.Label>Частота кормления (раз в день)</Form.Label>
+                        <Form.Control
+                            type="number"
+                            min="1"
+                            max="10"
+                            placeholder="Укажите частоту кормления"
+                            value={feedingFrequency || ''}
+                            onChange={(e) => setFeedingFrequency(e.target.value || null)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formIngredients">
+                        <Form.Label>Состав корма</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={2}
+                            placeholder="Укажите состав корма"
+                            value={ingredients || ''}
+                            onChange={(e) => setIngredients(e.target.value || null)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formServingSize">
+                        <Form.Label>Размер порции (г)</Form.Label>
+                        <Form.Control
+                            type="number"
+                            placeholder="Укажите размер порции"
+                            value={servingSize || ''}
+                            onChange={(e) => setServingSize(e.target.value || null)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="formFeaturesOfCare">
+                        <Form.Label>Особенности ухода</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            placeholder="Укажите особенности ухода"
+                            value={featuresOfCare || ''}
+                            onChange={(e) => setFeaturesOfCare(e.target.value || null)}
                         />
                     </Form.Group>
                 </Form>
@@ -498,6 +716,7 @@ class Profile extends React.Component {
             medcard: null,
             activeTab: "Общее",
             showEditModal: false,
+            showEditMedModal: false,
             documents: [],
             showDownloadModal: false,
             selectedDocument: null,
@@ -529,10 +748,12 @@ class Profile extends React.Component {
         await this.fetchDocuments(id);
     };
 
+
     fetchDocuments = async (petId) => {
         const documents = await documentsList(petId);
         this.setState({ documents });
     };
+
 
     handleAddDocument = async (file) => {
         const formData = new FormData();
@@ -541,6 +762,7 @@ class Profile extends React.Component {
         await this.fetchDocuments(this.state.pet.id);
     };
 
+
     isViewableType = (fileType) => {
         return (
             fileType.startsWith('image/') ||
@@ -548,6 +770,7 @@ class Profile extends React.Component {
             fileType === 'text/plain'
         );
     };
+
 
     handleDownloadDocument = async (doc) => {
         try {
@@ -580,23 +803,47 @@ class Profile extends React.Component {
         this.setState({ activeTab: tab });
     };
 
+
     toggleEditModal = () => {
         this.setState(prevState => ({
             showEditModal: !prevState.showEditModal
         }));
     };
 
+    toggleEditMedModal = () => {
+        this.setState(prevState => ({
+            showEditMedModal: !prevState.showEditMedModal
+        }));
+    };
+
+
     handleSavePet = async (updatedPetInfo) => {
         try {
             const updatedPet = await petUpdate(this.state.pet.id, updatedPetInfo);
             this.setState({
-                pet: updatedPet,
                 showEditModal: false
             });
+            let petInfo = await petsGet(this.state.pet.id);
+            this.setState({ pet: petInfo });
         } catch (error) {
 
         }
     };
+
+
+    handleSaveMedCard = async (updatedMedInfo) => {
+        try {
+            const updatedPet = await medCardUpdate(this.state.pet.id, updatedMedInfo);
+            this.setState({
+                showEditMedModal: false
+            });
+            let medcardInfo = await medCardGet(this.state.pet.id);
+            this.setState({ medcard: medcardInfo });
+        } catch (error) {
+
+        }
+    };
+
 
     handleDeleteDocument = async (documentId) => {
         try {
@@ -619,9 +866,10 @@ class Profile extends React.Component {
         return '📁';
     };
 
+
     render() {
-        const { reminders, pet, activeTab, medcard, showEditModal, documents, showDownloadModal, selectedDocument, showEmbeddedView } = this.state;
-        const tabs = ["Общее", "Медицинская карта", "Документы", "Соревнования", "Статистика", "Прием лекарств"];
+        const { reminders, pet, activeTab, medcard, showEditModal, documents, showDownloadModal, selectedDocument, showEmbeddedView, showEditMedModal } = this.state;
+        const tabs = ["Общее", "Медицинская карта", "Документы", "Статистика", "Прием лекарств"];
 
         return (
             <Container fluid style={{ marginTop: 100 }}>
@@ -722,7 +970,7 @@ class Profile extends React.Component {
                                 <div style={{ display: 'flex', gap: 15, flexDirection: 'column' }}>
                                     <div style={{ display: 'flex', gap: 20, alignItems: 'center', justifyContent: 'space-between' }}>
                                         <h5>Медицинские данные</h5>
-                                        <button className="black-button" onClick={() => { }}>
+                                        <button className="black-button" onClick={this.toggleEditMedModal}>
                                             Редактировать
                                         </button>
                                     </div>
@@ -761,6 +1009,12 @@ class Profile extends React.Component {
                                         <label className="p-light">Последняя обработка от гельминтов: </label>
                                         <p>{(medcard?.lastTicksTreatment?.desc + ' ' + formatBirthdate(medcard?.lastTicksTreatment?.treatmentDate)) ?? "Не указаны"}</p>
                                     </div>
+
+                                    <EditMedicineCardModal
+                                        show={showEditMedModal}
+                                        onHide={this.toggleEditMedModal}
+                                        onSave={this.handleSaveMedCard}
+                                        medicineCard={medcard}/>
 
                                 </div>}
 

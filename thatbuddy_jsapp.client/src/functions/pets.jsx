@@ -103,3 +103,27 @@ export async function petUpdate(petId, petInfo) {
         toast.error(error.message);
     }
 }
+
+
+export async function medCardUpdate(petId, medicineCardInfo) {
+    try {
+        const response = await fetch(`/api/pets/edit-medicine-card/${petId}`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: "include",
+            body: JSON.stringify(medicineCardInfo)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message);
+        }
+        const data = await response.json();
+        toast.success("Данные питомца успешно обновлены!");
+        return data;
+    } catch (error) {
+        toast.error(error.message);
+    }
+}
