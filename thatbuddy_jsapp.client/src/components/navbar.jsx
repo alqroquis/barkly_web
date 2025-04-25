@@ -2,7 +2,7 @@ import React from "react";
 import { useContext, useState } from "react";
 import AuthContext from "../context/AuthContext";
 import { Modal, Button, Form } from "react-bootstrap";
-import logo from "../assets/logo.svg";
+import logo from "../assets/appLogo.png";
 import logoutIcon from '../assets/logout.svg';
 import profileIcon from '../assets/profile.svg';
 import settingsIcon from '../assets/settings.svg';
@@ -26,8 +26,8 @@ const Navbar = () => {
                 </button>
 
                 <div className="collapse navbar-collapse" id="navbarTogglerDemo01">
-                    <a className="navbar-brand" href="#">
-                        <img src={logo} alt="Логотип" />
+                    <a className="navbar-brand" href="/">
+                        <img src={logo} alt="Логотип" style={{width: 80, height: 80} } />
                     </a>
 
                     <ul className="navbar-nav mx-auto mt-2 mt-lg-0">

@@ -1,190 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Container, Row, Col, Card } from "react-bootstrap";
-import { petsList, petsGet, petAdd, medCardGet, petUpdate, medCardUpdate} from '../functions/pets';
+import { Button, Container, Row, Col, Card } from "react-bootstrap";
+import { petsList, petsGet, petAdd, medCardGet, petUpdate, medCardUpdate } from '../functions/pets';
 import { documentsList, documentsUpload } from '../functions/documents';
+import { pluralize, calculateDogAge, formatAge, formatBirthdate } from './Components/Functions';
+import { AddPetModal, EditPetModal, EditMedicineCardModal, ActivityModal } from './Components/Modals';
+import PetActivityChart, { WeightChart, TrainingChart} from './Components/DurationBarChart';
 import defaultLogo from '../assets/default.svg';
 import { toast } from "react-toastify";
-import { AsyncTypeahead } from "react-bootstrap-typeahead";
-import "react-bootstrap-typeahead/css/Typeahead.css";
-
-
-const BreedSearch = ({ value, onChange }) => {
-    const [breeds, setBreeds] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedBreed, setSelectedBreed] = useState(value || []);
-
-    useEffect(() => {
-        setSelectedBreed(value || []);
-    }, [value]);
-
-
-    useEffect(() => {
-        fetch(`/api/search/breeds`, { method: "GET", credentials: "include" }).then((response) => {
-            return response.json();
-        }).then((data) => {
-            setBreeds(data.breeds);
-            setPage(1);
-            setHasMore(data.totalCount > data.breeds?.length);
-        });
-    }, []);
-
-
-    const handleSearch = async (query) => {
-        setIsLoading(true);
-        setSearchQuery(query);
-        try {
-            const response = await fetch(`/api/search/breeds?query=${query}&page=1`, { method: "GET", credentials: "include" });
-            const data = await response.json();
-            setBreeds(data.breeds);
-            setPage(1);
-            setHasMore(data.totalCount > data.breeds?.length);
-        } catch (error) {
-            console.error("Ошибка при поиске пород:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
-    const handleLoadMore = async () => {
-        if (!hasMore || isLoading) return;
-
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/search/breeds?query=${searchQuery}&page=${page + 1}`, { method: "GET", credentials: "include" });
-            const data = await response.json();
-            console.log(data.breeds);
-            setBreeds((prevBreeds) => [...prevBreeds, ...data.breeds]);
-            setPage((prevPage) => prevPage + 1);
-            setHasMore(data?.totalCount > breeds?.length + data.breeds?.length);
-        } catch (error) {
-            console.error("Ошибка при загрузке пород:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
-    const handleScroll = (event) => {
-        const { scrollTop, scrollHeight, clientHeight } = event.target;
-        if (scrollHeight - scrollTop === clientHeight && hasMore && !isLoading) {
-            handleLoadMore();
-        }
-    };
-
-
-    return (
-        <AsyncTypeahead
-            id="breed-search"
-            placeholder="Введите породу"
-            isLoading={isLoading}
-            options={breeds}
-            onSearch={handleSearch}
-            onChange={(selected) => {
-                setSelectedBreed(selected);
-                onChange(selected);
-            }}
-            onInputChange={(text) => handleSearch(text)}
-            selected={selectedBreed}
-            labelKey="name"
-            renderMenuItemChildren={(option) => <div>{option.name}</div>}
-            onScroll={handleScroll}
-            defaultInputValue={selectedBreed[0]?.name}
-        />
-    );
-};
-
-
-const FeedTypeSearch = ({ value, onChange }) => {
-    const [feedTypes, setFeedTypes] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedFeedType, setSelectedFeedType] = useState(value || []);
-
-    useEffect(() => {
-        setSelectedFeedType(value || []);
-    }, [value]);
-
-
-    useEffect(() => {
-        fetch(`/api/search/feed-types`, { method: "GET", credentials: "include" }).then((response) => {
-            return response.json();
-        }).then((data) => {
-            setFeedTypes(data.feedTypes);
-            setPage(1);
-            setHasMore(data.totalCount > data.feedTypes?.length);
-        });
-    }, []);
-
-
-    const handleSearch = async (query) => {
-        setIsLoading(true);
-        setSearchQuery(query);
-        try {
-            const response = await fetch(`/api/search/feed-types?query=${query}&page=1`, { method: "GET", credentials: "include" });
-            const data = await response.json();
-            setFeedTypes(data.feedTypes);
-            setPage(1);
-            setHasMore(data.totalCount > data.feedTypes?.length);
-        } catch (error) {
-            console.error("Ошибка при поиске пород:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
-    const handleLoadMore = async () => {
-        if (!hasMore || isLoading) return;
-
-        setIsLoading(true);
-        try {
-            const response = await fetch(`/api/search/feed-types?query=${searchQuery}&page=${page + 1}`, { method: "GET", credentials: "include" });
-            const data = await response.json();
-            setFeedTypes((prevTypes) => [...prevTypes, ...data.feedTypes]);
-            setPage((prevPage) => prevPage + 1);
-            setHasMore(data?.totalCount > feedTypes?.length + data.feedTypes?.length);
-        } catch (error) {
-            console.error("Ошибка при загрузке пород:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
-    const handleScroll = (event) => {
-        const { scrollTop, scrollHeight, clientHeight } = event.target;
-        if (scrollHeight - scrollTop === clientHeight && hasMore && !isLoading) {
-            handleLoadMore();
-        }
-    };
-
-
-    return (
-        <AsyncTypeahead
-            id="feed-search"
-            placeholder="Введите тип корма"
-            isLoading={isLoading}
-            options={feedTypes}
-            onSearch={handleSearch}
-            onChange={(selected) => {
-                setSelectedFeedType(selected);
-                onChange(selected);
-            }}
-            onInputChange={(text) => handleSearch(text)}
-            selected={selectedFeedType}
-            labelKey="name"
-            renderMenuItemChildren={(option) => <div>{option.name}</div>}
-            onScroll={handleScroll}
-            defaultInputValue={selectedFeedType[0]?.name}
-        />
-    );
-};
 
 
 const ReminderCard = () => {
@@ -216,355 +38,6 @@ const ReminderCard = () => {
 
             </Card.Body>
         </Card>
-    );
-};
-
-
-const AddPetModal = ({ show, onHide, onSave }) => {
-    const [name, setName] = useState("");
-    const [breed, setBreed] = useState("");
-    const [birthdate, setBirthdate] = useState("");
-    const [stigma, setStigma] = useState(""); // Номер клейма
-    const [microchip, setMicrochip] = useState(""); // Номер микрочипа
-    const [description, setDescription] = useState(""); // Описание питомца
-
-
-    const handleSave = () => {
-        if (!name || !birthdate) {
-            alert("Заполните поля Имя и Дата рождения");
-            return;
-        }
-        onSave({ name: name, breedId: breed.id, birthDate: new Date(`${birthdate}T12:30:52.673Z`).toISOString(), stigma: stigma, microchip: microchip, description: description });
-
-        onHide();
-    };
-
-    return (
-        <Modal show={show} onHide={onHide} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Добавить питомца</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <Form>
-                    <Form.Group className="mb-3" controlId="formPetName">
-                        <Form.Label>Имя питомца</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Введите имя"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetBreed">
-                        <Form.Label>Порода</Form.Label>
-                        <BreedSearch value={breed} onChange={setBreed} />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetBirthdate">
-                        <Form.Label>Дата рождения</Form.Label>
-                        <Form.Control
-                            type="date"
-                            max={new Date().toISOString().split("T")[0]}
-                            value={birthdate}
-                            onChange={(e) => setBirthdate(e.target.value)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetStigma">
-                        <Form.Label>Номер клейма</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Введите номер клейма"
-                            value={stigma}
-                            onChange={(e) => setStigma(e.target.value)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetMicrochip">
-                        <Form.Label>Номер микрочипа</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Введите номер микрочипа"
-                            value={microchip}
-                            onChange={(e) => setMicrochip(e.target.value)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetDescription">
-                        <Form.Label>Описание питомца</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            placeholder="Введите описание питомца"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
-                    </Form.Group>
-                </Form>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
-                    Отмена
-                </Button>
-                <Button variant="primary" onClick={handleSave}>
-                    Сохранить
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-};
-
-
-const EditPetModal = ({ show, onHide, onSave, pet }) => {
-    const [name, setName] = useState(null);
-    const [breed, setBreed] = useState(null);
-    const [birthdate, setBirthdate] = useState(null);
-    const [stigma, setStigma] = useState(null);
-    const [microchip, setMicrochip] = useState(null);
-    const [description, setDescription] = useState(null);
-
-    useEffect(() => {
-        if (pet) {
-            setName(pet.name || null);
-            setBirthdate(pet.birthdate?.split("T")[0] || null);
-            setStigma(pet.stigma || null);
-            setMicrochip(pet.microchip || null);
-            setDescription(pet.description || null);
-        }
-    }, [pet]);
-
-    useEffect(() => {
-        if (pet?.breed) {
-            setBreed([pet.breed]);
-        }
-    }, [pet]);
-
-    const handleSave = () => {
-        if (!name || !birthdate) {
-            alert("Заполните поля Имя и Дата рождения");
-            return;
-        }
-        onSave({
-            name: name,
-            breedId: breed?.[0]?.id || null,
-            birthDate: new Date(birthdate).toISOString(),
-            stigma: stigma,
-            microchip: microchip,
-            description: description
-        });
-        onHide();
-    };
-
-    return (
-        <Modal show={show} onHide={onHide} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Редактировать данные питомца</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <Form>
-                    <Form.Group className="mb-3" controlId="formPetName">
-                        <Form.Label>Имя питомца</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Введите имя"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetBreed">
-                        <Form.Label>Порода</Form.Label>
-                        <BreedSearch
-                            value={breed}
-                            onChange={(selected) => setBreed(selected)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetBirthdate">
-                        <Form.Label>Дата рождения</Form.Label>
-                        <Form.Control
-                            type="date"
-                            max={new Date().toISOString().split("T")[0]}
-                            value={birthdate}
-                            onChange={(e) => setBirthdate(e.target.value)}
-                        />
-                        {/* Для отладки можно добавить: */}
-                        <small className="text-muted">
-                            Текущее значение: {birthdate || "не установлено"}
-                        </small>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetStigma">
-                        <Form.Label>Номер клейма</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Введите номер клейма"
-                            value={stigma}
-                            onChange={(e) => setStigma(e.target.value)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetMicrochip">
-                        <Form.Label>Номер микрочипа</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Введите номер микрочипа"
-                            value={microchip}
-                            onChange={(e) => setMicrochip(e.target.value)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formPetDescription">
-                        <Form.Label>Описание питомца</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            placeholder="Введите описание питомца"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
-                    </Form.Group>
-                </Form>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
-                    Отмена
-                </Button>
-                <Button variant="primary" onClick={handleSave}>
-                    Сохранить
-                </Button>
-            </Modal.Footer>
-        </Modal>
-    );
-};
-
-
-const EditMedicineCardModal = ({ show, onHide, onSave, medicineCard, petId }) => {
-    const [allergies, setAllergies] = useState(null);
-    const [weight, setWeight] = useState(null);
-    const [feedType, setFeedType] = useState(null);
-    const [feedingFrequency, setFeedingFrequency] = useState(null);
-    const [ingredients, setIngredients] = useState(null);
-    const [servingSize, setServingSize] = useState(null);
-    const [featuresOfCare, setFeaturesOfCare] = useState(null);
-
-    useEffect(() => {
-        if (medicineCard) {
-            setAllergies(medicineCard.allergies || null);
-            setWeight(medicineCard.weight || null);
-            setFeedType(medicineCard.feedType ? [medicineCard.feedType] : null);
-            setFeedingFrequency(medicineCard.feedingFrequency || null);
-            setIngredients(medicineCard.ingredients || null);
-            setServingSize(medicineCard.servingSize || null);
-            setFeaturesOfCare(medicineCard.featuresOfCare || null);
-        }
-    }, [medicineCard]);
-
-    const handleSave = () => {
-        onSave({
-            allergies: allergies,
-            weight: weight ? parseFloat(weight) : null,
-            feedTypeId: feedType?.[0]?.id || null,
-            feedingFrequency: feedingFrequency ? parseInt(feedingFrequency) : null,
-            ingredients: ingredients,
-            servingSize: servingSize ? parseInt(servingSize) : null,
-            featuresOfCare: featuresOfCare
-        });
-        onHide();
-    };
-
-    return (
-        <Modal show={show} onHide={onHide} centered>
-            <Modal.Header closeButton>
-                <Modal.Title>Редактировать медицинскую карту</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-                <Form>
-                    <Form.Group className="mb-3" controlId="formAllergies">
-                        <Form.Label>Аллергии</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={2}
-                            placeholder="Укажите аллергии"
-                            value={allergies || ''}
-                            onChange={(e) => setAllergies(e.target.value || null)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formWeight">
-                        <Form.Label>Вес (кг)</Form.Label>
-                        <Form.Control
-                            type="number"
-                            step="0.1"
-                            placeholder="Укажите вес"
-                            value={weight || ''}
-                            onChange={(e) => setWeight(e.target.value || null)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formFeedType">
-                        <Form.Label>Тип корма</Form.Label>
-                        <FeedTypeSearch
-                            value={feedType}
-                            onChange={(selected) => setFeedType(selected)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formFeedingFrequency">
-                        <Form.Label>Частота кормления (раз в день)</Form.Label>
-                        <Form.Control
-                            type="number"
-                            min="1"
-                            max="10"
-                            placeholder="Укажите частоту кормления"
-                            value={feedingFrequency || ''}
-                            onChange={(e) => setFeedingFrequency(e.target.value || null)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formIngredients">
-                        <Form.Label>Состав корма</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={2}
-                            placeholder="Укажите состав корма"
-                            value={ingredients || ''}
-                            onChange={(e) => setIngredients(e.target.value || null)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formServingSize">
-                        <Form.Label>Размер порции (г)</Form.Label>
-                        <Form.Control
-                            type="number"
-                            placeholder="Укажите размер порции"
-                            value={servingSize || ''}
-                            onChange={(e) => setServingSize(e.target.value || null)}
-                        />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3" controlId="formFeaturesOfCare">
-                        <Form.Label>Особенности ухода</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            placeholder="Укажите особенности ухода"
-                            value={featuresOfCare || ''}
-                            onChange={(e) => setFeaturesOfCare(e.target.value || null)}
-                        />
-                    </Form.Group>
-                </Form>
-            </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
-                    Отмена
-                </Button>
-                <Button variant="primary" onClick={handleSave}>
-                    Сохранить
-                </Button>
-            </Modal.Footer>
-        </Modal>
     );
 };
 
@@ -659,7 +132,7 @@ const PetsColumn = ({ onSelectedPetChange }) => {
 };
 
 
-const DogHead = ({ name, age, imageUrl = defaultLogo }) => {
+const DogHead = ({ name, age, imageUrl = defaultLogo, onAddActivity }) => {
     return (
         <div
             style={{
@@ -700,7 +173,7 @@ const DogHead = ({ name, age, imageUrl = defaultLogo }) => {
                 </div>
 
                 <p className="p-light">{formatAge(age.years, age.months)}</p>
-                <button className="green-button">Добавить запись активности</button>
+                <button className="green-button" onClick={onAddActivity}>Добавить запись активности</button>
             </div>
         </div>
     );
@@ -720,12 +193,24 @@ class Profile extends React.Component {
             documents: [],
             showDownloadModal: false,
             selectedDocument: null,
-            showEmbeddedView: false
+            showActivityForm: false,
+            showWeightForm: false,
+            activities: [],
+            trainings: [],
+            weightMeasurements: [],
+            weightHistory: [],
+            activityTypes: []
         };
         this.fetchPet = this.fetchPet.bind(this);
         this.handleTabClick = this.handleTabClick.bind(this);
         this.toggleEditModal = this.toggleEditModal.bind(this);
         this.handleSavePet = this.handleSavePet.bind(this);
+        this.fetchActivities = this.fetchActivities.bind(this);
+        this.fetchDocuments = this.fetchDocuments.bind(this);
+        this.handleAddDocument = this.handleAddDocument.bind(this);
+        this.fetchDocuments = this.fetchDocuments.bind(this);
+        this.fetchWeightMeasurements = this.fetchWeightMeasurements.bind(this);
+        this.fetchTrainings = this.fetchTrainings.bind(this);
     }
 
 
@@ -746,7 +231,50 @@ class Profile extends React.Component {
         let medcardInfo = await medCardGet(id);
         this.setState({ pet: petInfo, medcard: medcardInfo });
         await this.fetchDocuments(id);
+        await this.fetchActivities();
+        await this.fetchWeightMeasurements();
+        await this.fetchTrainings();
     };
+
+
+    async fetchActivities() {
+        if (!this.state.pet?.id) return;
+
+        try {
+            const response = await fetch(`/api/activities/get-activities/${this.state.pet.id}?activityTypeId=1`);
+            const data = await response.json();
+            this.setState({ activities: data });
+        } catch (error) {
+            console.error('Error fetching activities:', error);
+        }
+    }
+
+
+    async fetchTrainings() {
+        if (!this.state.pet?.id) return;
+
+        try {
+            const response = await fetch(`/api/activities/get-activities/${this.state.pet.id}?activityTypeId=4`);
+            const data = await response.json();
+            this.setState({ trainings: data });
+        } catch (error) {
+            console.error('Error fetching trainings:', error);
+        }
+    }
+
+
+
+    async fetchWeightMeasurements() {
+        if (!this.state.pet?.id) return;
+
+        try {
+            const response = await fetch(`/api/activities/get-weight-measurements/${this.state.pet.id}`);
+            const data = await response.json();
+            this.setState({ weightMeasurements: data });
+        } catch (error) {
+            console.error('Error fetching weight measurements:', error);
+        }
+    }
 
 
     fetchDocuments = async (petId) => {
@@ -810,6 +338,7 @@ class Profile extends React.Component {
         }));
     };
 
+
     toggleEditMedModal = () => {
         this.setState(prevState => ({
             showEditMedModal: !prevState.showEditMedModal
@@ -868,7 +397,7 @@ class Profile extends React.Component {
 
 
     render() {
-        const { reminders, pet, activeTab, medcard, showEditModal, documents, showDownloadModal, selectedDocument, showEmbeddedView, showEditMedModal } = this.state;
+        const { reminders, pet, activeTab, medcard, showEditModal, documents, showDownloadModal, selectedDocument, showEditMedModal, activities, showActivityForm, weightMeasurements, trainings } = this.state;
         const tabs = ["Общее", "Медицинская карта", "Документы", "Статистика", "Прием лекарств"];
 
         return (
@@ -886,7 +415,14 @@ class Profile extends React.Component {
                         <h2 style={{ marginBottom: "20px" }}>Мои питомцы</h2>
                         <PetsColumn onSelectedPetChange={this.fetchPet} />
                         <div className="grey-rounded-container">
-                            {pet !== null && <DogHead name={pet.name} age={calculateDogAge(pet.birthdate)} imageUrl={pet.logoUrl} />}
+                            {pet !== null && <DogHead name={pet.name} age={calculateDogAge(pet.birthdate)} imageUrl={pet.logoUrl} onAddActivity={() => this.setState({ showActivityForm: true })} />}
+                            {pet !== null && <ActivityModal
+                                show={showActivityForm}
+                                onHide={() => this.setState({ showActivityForm: false })}
+                                fetchActivities={this.fetchActivities}
+                                fetchWeightMeasurements={this.fetchWeightMeasurements}
+                                petId={pet.id}
+                            />}
                             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "40px" }}>
                                 {tabs.map((tab, index) => (
                                     <Button
@@ -1014,7 +550,7 @@ class Profile extends React.Component {
                                         show={showEditMedModal}
                                         onHide={this.toggleEditMedModal}
                                         onSave={this.handleSaveMedCard}
-                                        medicineCard={medcard}/>
+                                        medicineCard={medcard} />
 
                                 </div>}
 
@@ -1077,36 +613,6 @@ class Profile extends React.Component {
                                         </div>
                                     )}
 
-                                    {showEmbeddedView && (
-                                        <div style={{
-                                            position: 'fixed',
-                                            top: 0,
-                                            left: 0,
-                                            right: 0,
-                                            bottom: 0,
-                                            backgroundColor: 'rgba(0,0,0,0.8)',
-                                            zIndex: 1000,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            padding: '20px'
-                                        }}>
-                                            <div style={{
-                                                display: 'flex',
-                                                justifyContent: 'flex-end',
-                                                marginBottom: '10px'
-                                            }}>
-                                                <button
-                                                    className="black-button"
-                                                    onClick={() => this.setState({ showEmbeddedView: false })}
-                                                >
-                                                    Закрыть
-                                                </button>
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                {this.renderEmbeddedView()}
-                                            </div>
-                                        </div>
-                                    )}
 
                                     {showDownloadModal && (
                                         <div style={{
@@ -1141,6 +647,58 @@ class Profile extends React.Component {
                                         </div>
                                     )}
                                 </div>}
+
+
+                            {activeTab === "Статистика" && (
+                                <>
+                                    {activities?.length > 0 && (
+                                        <>
+                                            <h4 className="mb-4">Статистика активностей</h4>
+                                            <div className="container bg-white rounded p-4 mb-4 shadow-sm">
+                                                <div className="row">
+                                                    <div className="col-12">
+                                                        <div className="mb-5">
+                                                            <h5>Длительность прогулок</h5>
+                                                            <PetActivityChart data={activities} type="duration" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="container bg-white rounded p-4 mb-4 shadow-sm">
+                                                <div className="row">
+                                                    <div className="col-12">
+                                                        <div className="mb-3">
+                                                            <h5>Пройденное расстояние</h5>
+                                                            <PetActivityChart data={activities} type="distance" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {weightMeasurements?.length > 0 && (
+                                        <>
+                                            <h4 className="mb-4">Статистика веса</h4>
+                                            <div className="container bg-white rounded p-4 mb-4 shadow-sm">
+                                                <div className="row">
+                                                    <div className="col-12">
+                                                        <WeightChart data={weightMeasurements} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
+
+                                    {trainings?.length > 0 && (
+                                        <div className="container bg-white rounded p-4 mb-4 shadow-sm">
+                                            <h5>Статистика тренировок</h5>
+                                            <TrainingChart data={trainings} />
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     </Col>
                 </Row>
@@ -1148,60 +706,6 @@ class Profile extends React.Component {
         );
     }
 }
-
-
-const pluralize = (number, words) => {
-    const cases = [2, 0, 1, 1, 1, 2];
-    return words[
-        number % 100 > 4 && number % 100 < 20
-            ? 2
-            : cases[number % 10 < 5 ? number % 10 : 5]
-    ];
-};
-
-
-const calculateDogAge = (birthdateString) => {
-    const birthdate = new Date(birthdateString);
-    const currentDate = new Date();
-
-    const timeDiff = currentDate - birthdate;
-
-    const millisecondsInYear = 1000 * 60 * 60 * 24 * 365.25;
-    const years = Math.floor(timeDiff / millisecondsInYear);
-    const remainingMilliseconds = timeDiff % millisecondsInYear;
-    const months = Math.floor(remainingMilliseconds / (1000 * 60 * 60 * 24 * 30.44));
-
-    return { years, months };
-};
-
-
-const formatAge = (years, months) => {
-    const yearWord = pluralize(years, ["год", "года", "лет"]);
-    const monthWord = pluralize(months, ["месяц", "месяца", "месяцев"]);
-
-    let result = "";
-    if (years > 0) {
-        result += `${years} ${yearWord}`;
-    }
-    if (months > 0) {
-        if (result) result += " и ";
-        result += `${months} ${monthWord}`;
-    }
-    else if (years < 1 && months < 1) {
-        result = `Меньше месяца`
-    }
-    return result || "Возраст не определен";
-};
-
-
-const formatBirthdate = (birthdateString) => {
-    const date = new Date(birthdateString);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-
-    return `${day}.${month}.${year}`;
-};
 
 
 export default Profile;

@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="src\pages\Maps\" />
+    <Folder Include="src\pages\Components\" />
   </ItemGroup>
 </Project>
