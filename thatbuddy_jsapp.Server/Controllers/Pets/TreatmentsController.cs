@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
+using thatbuddy_jsapp.Server.Controllers.Families;
 using thatbuddy_jsapp.Server.Services;
 
 namespace thatbuddy_jsapp.Server.Controllers.Pets
@@ -37,11 +38,23 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             #endregion
 
 
-            #region Проверка принадлежности питомца пользователю
+            #region Проверка принадлежности питомца пользователю или семье
             var pet = await _databaseService.GetPetByIdAsync(petId);
-            if (pet == null || pet.UserId != user.Id)
+            if (pet == null)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+
+            // Если питомец не принадлежит пользователю, проверяем семью
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
             }
             #endregion
 
@@ -55,35 +68,33 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
 
             #region Добавление лекарства
-            using (var connection = new NpgsqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
 
-                var insertQuery = @"
+            var insertQuery = @"
                                   INSERT INTO treatments(
 	                                 pet_id, description, treatment_type_id, treatment_date, created_at, updated_at)
 	                              VALUES (@PetId, @Description, @TreatmentTypeId, @TreatmentDate, now(), now())
                                   RETURNING id;";
-                try
+            try
+            {
+                var treatmentId = await connection.ExecuteScalarAsync<long>(insertQuery, new
                 {
-                    var treatmentId = await connection.ExecuteScalarAsync<long>(insertQuery, new
-                    {
-                        PetId = petId,
-                        treatment.Description,
-                        treatment.TreatmentTypeId,
-                        treatment.TreatmentDate
-                    });
+                    PetId = petId,
+                    treatment.Description,
+                    treatment.TreatmentTypeId,
+                    treatment.TreatmentDate
+                });
 
-                    return Ok(new
-                    {
-                        Id = treatmentId
-                    });
-                }
-                catch (Exception ex)
+                return Ok(new
                 {
-                    Console.WriteLine($"Error adding treatment: {ex.Message}");
-                    return StatusCode(500, MessageHelper.GetMessageText(Messages.UnknownError));
-                }
+                    Id = treatmentId
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error adding treatment: {ex.Message}");
+                return StatusCode(500, MessageHelper.GetMessageText(Messages.UnknownError));
             }
             #endregion
         }
@@ -115,11 +126,23 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             #endregion
 
 
-            #region Проверка принадлежности питомца пользователю
+            #region Проверка принадлежности питомца пользователю или семье
             var pet = await _databaseService.GetPetByIdAsync(petId);
-            if (pet == null || pet.UserId != user.Id)
+            if (pet == null)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+
+            // Если питомец не принадлежит пользователю, проверяем семью
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
             }
             #endregion
 
@@ -130,11 +153,10 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                 page = 1;
                 limit = 40;
             }
-            using (var connection = new NpgsqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                int offset = (page - 1) * limit;
-                var insertQuery = @"
+            using var connection = new NpgsqlConnection(_connectionString);
+            await connection.OpenAsync();
+            int offset = (page - 1) * limit;
+            var insertQuery = @"
                                   select t.id as Id, 
                                          t.description as Description, 
                                          t.treatment_type_id as TreatmentTypeId,
@@ -149,36 +171,35 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                                          (@query = '' OR description ILIKE @query)
                                    limit @limit
                                    offset @offset;";
-                try
+            try
+            {
+                var treatments = await connection.QueryAsync<TreatmentList>(insertQuery, new
                 {
-                    var treatments = await connection.QueryAsync<TreatmentList>(insertQuery, new
-                    {
-                        PetId = petId,
-                        limit,
-                        offset,
-                        query = $"%{query}%"
-                    });
-                    var countQuery = @"
+                    PetId = petId,
+                    limit,
+                    offset,
+                    query = $"%{query}%"
+                });
+                var countQuery = @"
                                     SELECT COUNT(*)
                                     FROM treatments
                                     WHERE pet_id = @PetId and 
                                           deleted_at is NULL and 
                                          (@query = '' OR description ILIKE @query)";
-                    int totalCount = await connection.ExecuteScalarAsync<int>(countQuery, new { PetId = petId, query = $"%{query}%" });
+                int totalCount = await connection.ExecuteScalarAsync<int>(countQuery, new { PetId = petId, query = $"%{query}%" });
 
-                    return Ok(new
-                    {
-                        TotalCount = totalCount,
-                        Page = page,
-                        Limit = limit,
-                        Treatments = treatments
-                    });
-                }
-                catch (Exception ex)
+                return Ok(new
                 {
-                    Console.WriteLine($"Error list treatments: {ex.Message}");
-                    return StatusCode(500, MessageHelper.GetMessageText(Messages.UnknownError));
-                }
+                    TotalCount = totalCount,
+                    Page = page,
+                    Limit = limit,
+                    Treatments = treatments
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error list treatments: {ex.Message}");
+                return StatusCode(500, MessageHelper.GetMessageText(Messages.UnknownError));
             }
             #endregion
         }
@@ -204,7 +225,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             {
                 return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
             }
-            #endregion
+            #endregion 
 
             #region Проверка принадлежности лечения пользователю
             using (var connection = new NpgsqlConnection(_connectionString))

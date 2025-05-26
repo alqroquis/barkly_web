@@ -11,21 +11,6 @@ export const useHeatmap = () => {
         end: '23:59:59'
     });
 
-    useEffect(() => {
-        switch (timeRange) {
-            case 'morning':
-                setTimeParams({ start: '06:00:00', end: '11:59:59' });
-                break;
-            case 'afternoon':
-                setTimeParams({ start: '12:00:00', end: '17:59:59' });
-                break;
-            case 'evening':
-                setTimeParams({ start: '18:00:00', end: '23:59:59' });
-                break;
-            default:
-                setTimeParams({ start: '00:00:00', end: '23:59:59' });
-        }
-    }, [timeRange]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -51,7 +36,24 @@ export const useHeatmap = () => {
         };
 
         fetchData();
-    }, [timeParams]);
+    }, []);
+
+
+    useEffect(() => {
+        switch (timeRange) {
+            case 'morning':
+                setTimeParams({ start: '06:00:00', end: '11:59:59' });
+                break;
+            case 'afternoon':
+                setTimeParams({ start: '12:00:00', end: '17:59:59' });
+                break;
+            case 'evening':
+                setTimeParams({ start: '18:00:00', end: '23:59:59' });
+                break;
+            default:
+                setTimeParams({ start: '00:00:00', end: '23:59:59' });
+        }
+    }, [timeRange]);
 
     return { heatmapData, timeRange, setTimeRange };
 };
@@ -69,7 +71,7 @@ export const AddTrafficPointModal = ({ show, coords, onHide, onSave }) => {
 
     const handleSave = () => {
         if (!timeSlots.length || !coords) {
-            alert("Добавьте временные слоты и убедитесь, что выбраны координаты");
+            alert("Р”РѕР±Р°РІСЊС‚Рµ РІСЂРµРјРµРЅРЅС‹Рµ СЃР»РѕС‚С‹ Рё СѓР±РµРґРёС‚РµСЃСЊ, С‡С‚Рѕ РІС‹Р±СЂР°РЅС‹ РєРѕРѕСЂРґРёРЅР°С‚С‹");
             return;
         }
 
@@ -85,33 +87,33 @@ export const AddTrafficPointModal = ({ show, coords, onHide, onSave }) => {
     return (
         <Modal show={show} onHide={onHide} centered>
             <Modal.Header closeButton>
-                <Modal.Title>Добавить точку загруженности</Modal.Title>
+                <Modal.Title>Р”РѕР±Р°РІРёС‚СЊ С‚РѕС‡РєСѓ Р·Р°РіСЂСѓР¶РµРЅРЅРѕСЃС‚Рё</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <Form>
                     <Form.Group className="mb-3">
-                        <Form.Label>Координаты</Form.Label>
+                        <Form.Label>РљРѕРѕСЂРґРёРЅР°С‚С‹</Form.Label>
                         <div className="text-muted">
-                            Широта: {coords?.[0]?.toFixed(6)}, Долгота: {coords?.[1]?.toFixed(6)}
+                            РЁРёСЂРѕС‚Р°: {coords?.[0]?.toFixed(6)}, Р”РѕР»РіРѕС‚Р°: {coords?.[1]?.toFixed(6)}
                         </div>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
-                        <Form.Label>Временные слоты прогулки*</Form.Label>
+                        <Form.Label>Р’СЂРµРјРµРЅРЅС‹Рµ СЃР»РѕС‚С‹ РїСЂРѕРіСѓР»РєРё*</Form.Label>
                         <div className="d-flex mb-2">
                             <Form.Control
                                 type="time"
                                 value={currentTime}
                                 onChange={(e) => setCurrentTime(e.target.value)}
                             />
-                            <Button variant="primary" onClick={handleAddTime} className="ms-2">
-                                Добавить время
+                            <Button variant="primary btn-green" onClick={handleAddTime} className="ms-2">
+                                Р”РѕР±Р°РІРёС‚СЊ РІСЂРµРјСЏ
                             </Button>
                         </div>
 
                         {timeSlots.length > 0 && (
                             <div className="mt-2">
-                                <h6>Добавленные слоты:</h6>
+                                <h6>Р”РѕР±Р°РІР»РµРЅРЅС‹Рµ СЃР»РѕС‚С‹:</h6>
                                 <ul>
                                     {timeSlots.map((slot, i) => (
                                         <li key={i}>{slot}</li>
@@ -124,10 +126,10 @@ export const AddTrafficPointModal = ({ show, coords, onHide, onSave }) => {
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={onHide}>
-                    Отмена
+                    РћС‚РјРµРЅР°
                 </Button>
-                <Button variant="primary" onClick={handleSave}>
-                    Добавить точку
+                <Button variant="primary btn-green" onClick={handleSave}>
+                    Р”РѕР±Р°РІРёС‚СЊ С‚РѕС‡РєСѓ
                 </Button>
             </Modal.Footer>
         </Modal>

@@ -11,5 +11,8 @@
   <ItemGroup>
     <Folder Include="src\pages\Maps\" />
     <Folder Include="src\pages\Components\" />
+    <Folder Include="src\pages\Shelters\" />
+    <Folder Include="src\pages\Users\" />
+    <Folder Include="src\pages\Tariffs\" />
   </ItemGroup>
 </Project>

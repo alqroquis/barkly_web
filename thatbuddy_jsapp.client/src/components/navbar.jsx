@@ -2,10 +2,10 @@ import React from "react";
 import { useContext, useState } from "react";
 import AuthContext from "../context/AuthContext";
 import { Modal, Button, Form } from "react-bootstrap";
-import logo from "../assets/appLogo.png";
+import logo from "../assets/woof-logo.svg";
 import logoutIcon from '../assets/logout.svg';
 import profileIcon from '../assets/profile.svg';
-import settingsIcon from '../assets/settings.svg';
+import petIcon from '../assets/pet-icon.svg';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
@@ -27,7 +27,7 @@ const Navbar = () => {
 
                 <div className="collapse navbar-collapse" id="navbarTogglerDemo01">
                     <a className="navbar-brand" href="/">
-                        <img src={logo} alt="Логотип" style={{width: 80, height: 80} } />
+                        <img src={logo} alt="Логотип" />
                     </a>
 
                     <ul className="navbar-nav mx-auto mt-2 mt-lg-0">
@@ -38,22 +38,22 @@ const Navbar = () => {
                             <a className="nav-link" href="/maps">Карты</a>
                         </li>
                         <li className="nav-item">
-                            <a className="nav-link" href="#">Приюты</a>
+                            <a className="nav-link" href="/shelters">Приюты</a>
                         </li>
                         <li className="nav-item">
-                            <a className="nav-link" href="#">Тарифы</a>
+                            <a className="nav-link" href="/tariffs">Тарифы</a>
                         </li>
                     </ul>
 
                     {user ? (
                         <div className="d-flex align-items-start">
                             <a href="/profile" className="nav-link me-3 d-flex flex-column align-items-center">
+                                <img src={petIcon} alt="Питомцы" style={{ width: "24px", height: "24px" }} />
+                                <span style={{ fontSize: "0.875rem", marginTop: "4px" }}>Питомцы</span>
+                            </a>
+                            <a href="/me" className="nav-link me-3 d-flex flex-column align-items-center">
                                 <img src={profileIcon} alt="Личный кабинет" style={{ width: "24px", height: "24px" }} />
                                 <span style={{ fontSize: "0.875rem", marginTop: "4px", maxWidth: 50, lineHeight: "0.875rem" }}>Личный кабинет</span>
-                            </a>
-                            <a href="#" className="nav-link me-3 d-flex flex-column align-items-center">
-                                <img src={settingsIcon} alt="Настройки" style={{ width: "24px", height: "24px" }} />
-                                <span style={{ fontSize: "0.875rem", marginTop: "4px" }}>Настройки</span>
                             </a>
                             <button className="nav-link me-3 d-flex flex-column align-items-center" onClick={logout}>
                                 <img src={logoutIcon} style={{ width: "24px", height: "24px" }} />
@@ -134,7 +134,7 @@ const AuthModal = () => {
                                 />
                             </Form.Group>
 
-                            <Button variant="primary" type="submit" className="w-100">
+                            <Button variant="primary btn-green" type="submit" className="w-100">
                                 Войти
                             </Button>
                         </Form>
@@ -185,7 +185,7 @@ const AuthModal = () => {
                                 />
                             </Form.Group>
 
-                            <Button variant="primary" type="submit" className="w-100">
+                                <Button variant="primary" type="submit" className="w-100 btn-green">
                                 Зарегистрироваться
                             </Button>
                         </Form>
@@ -193,6 +193,7 @@ const AuthModal = () => {
 
                     <div className="text-center mt-3">
                         <Button
+                            style={{ textDecoration: 'none', color: '#000000'}}
                             variant="link"
                             onClick={() => setIsLoginForm(!isLoginForm)}
                         >
