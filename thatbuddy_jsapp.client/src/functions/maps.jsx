@@ -35,7 +35,7 @@ export async function dangerAdd(pointInfo) {
             throw new Error(errorData.message);
         }
         const data = await response.json();
-        toast.success("�������!");
+        toast.success("Успешно!");
         return data;
     } catch (error) {
         toast.error(error.message);
@@ -61,5 +61,30 @@ export async function trafficList(timeStart, timeEnd) {
     } catch (error) {
         toast.error(error.message);
         return { traffics: [] };
+    }
+}
+
+export async function trafficAdd(trafficInfo) {
+    try {
+        const response = await fetch(`/api/traffic/add`, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: "include",
+            body: JSON.stringify(trafficInfo)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Ошибка при добавлении точки трафика");
+        }
+
+        const data = await response.json();
+        toast.success("Точка трафика успешно добавлена!");
+        return data;
+    } catch (error) {
+        toast.error(error.message || "Не удалось добавить точку трафика");
+        return { error: error.message };
     }
 }

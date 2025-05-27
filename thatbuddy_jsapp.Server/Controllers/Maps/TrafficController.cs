@@ -31,6 +31,28 @@ namespace thatbuddy_jsapp.Server.Controllers.Maps
             }
             #endregion
 
+            #region Проверка существующей точки за последние полгода
+            var checkQuery = @"
+        SELECT COUNT(*) 
+        FROM traffic_points 
+        WHERE 
+            user_id = @UserId 
+            AND activity_time::time = @ActivityTime::time
+            AND created_at >= NOW() - INTERVAL '6 months'";
+
+            using var checkConnection = new NpgsqlConnection(_connectionString);
+            var existingCount = await checkConnection.ExecuteScalarAsync<int>(checkQuery, new
+            {
+                UserId = user.Id,
+                traffic.ActivityTime
+            });
+
+            if (existingCount > 0)
+            {
+                return BadRequest(new { Message = "Вы уже добавили точку на это время в последние 6 месяцев" });
+            }
+            #endregion
+
 
             #region Валидация полей
             if (!ModelState.IsValid)

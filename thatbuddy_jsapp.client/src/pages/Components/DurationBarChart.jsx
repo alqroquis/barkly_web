@@ -7,6 +7,12 @@ const PetActivityChart = ({ data, type }) => {
     const canvasRef = useRef(null);
     const [averageValues, setAverageValues] = useState({ distance: 0, duration: 0 });
 
+    // Цветовая палитра
+    const chartColors = {
+        distance: '#CDE160',  // Зеленый цвет для расстояния
+        duration: '#F3BF77'   // Оранжевый цвет для длительности
+    };
+
     useEffect(() => {
         return () => {
             if (chartRef.current) {
@@ -20,7 +26,6 @@ const PetActivityChart = ({ data, type }) => {
 
         const groupedData = data.reduce((acc, item) => {
             const dateKey = new Date(item.createdat).toLocaleDateString();
-
             if (!acc[dateKey]) {
                 acc[dateKey] = {
                     distancekm: 0,
@@ -28,10 +33,8 @@ const PetActivityChart = ({ data, type }) => {
                     date: dateKey
                 };
             }
-
             acc[dateKey].distancekm += item.distancekm || 0;
             acc[dateKey].durationminutes += item.durationminutes || 0;
-
             return acc;
         }, {});
 
@@ -40,7 +43,6 @@ const PetActivityChart = ({ data, type }) => {
         const calculateAverages = () => {
             const totalDistance = summedData.reduce((sum, item) => sum + item.distancekm, 0);
             const totalDuration = summedData.reduce((sum, item) => sum + item.durationminutes, 0);
-
             return {
                 distance: (totalDistance / summedData.length).toFixed(2),
                 duration: Math.round(totalDuration / summedData.length)
@@ -60,7 +62,6 @@ const PetActivityChart = ({ data, type }) => {
         };
 
         const labels = generateLast30DaysLabels();
-
         const dataByDate = {};
         summedData.forEach(item => {
             dataByDate[item.date] = item;
@@ -71,23 +72,6 @@ const PetActivityChart = ({ data, type }) => {
             return item ? (type === 'distance' ? item.distancekm : item.durationminutes) : 0;
         });
 
-        const chartData = {
-            labels: labels,
-            datasets: [{
-                label: type === 'distance'
-                    ? 'Пройденное расстояние (км)'
-                    : 'Длительность прогулок (минуты)',
-                data: chartValues,
-                backgroundColor: type === 'distance'
-                    ? 'rgba(153, 102, 255, 0.6)'
-                    : 'rgba(75, 192, 192, 0.6)',
-                borderColor: type === 'distance'
-                    ? 'rgba(153, 102, 255, 1)'
-                    : 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        };
-
         const ctx = canvasRef.current.getContext('2d');
 
         if (chartRef.current) {
@@ -96,26 +80,63 @@ const PetActivityChart = ({ data, type }) => {
 
         chartRef.current = new Chart(ctx, {
             type: 'bar',
-            data: chartData,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: type === 'distance'
+                        ? 'Пройденное расстояние (км)'
+                        : 'Длительность прогулок (минуты)',
+                    data: chartValues,
+                    backgroundColor: chartColors[type],
+                    borderColor: chartColors[type],
+                    borderWidth: 0,
+                    borderRadius: 5,
+                    barThickness: 4,
+                    categoryPercentage: 0.8,
+                    barPercentage: 1.0
+                }]
+            },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: type === 'distance' ? 'Километры' : 'Минуты'
+                            text: type === 'distance' ? 'Километры' : 'Минуты',
+                            color: '#666'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Дата'
+                            text: 'Дата',
+                            color: '#666'
+                        },
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxRotation: 0,
+                            maxTicksLimit: 10
                         }
                     }
                 },
                 plugins: {
+                    legend: {
+                        labels: {
+                            color: '#333'
+                        }
+                    },
                     tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
                         callbacks: {
                             label: (context) => {
                                 return `${context.dataset.label}: ${context.parsed.y} ${type === 'distance' ? 'км' : 'мин'}`;
@@ -129,13 +150,32 @@ const PetActivityChart = ({ data, type }) => {
     }, [data, type]);
 
     return (
-        <div className="w-100">
-            <div className="mb-2">
+        <div style={{
+            width: '100%',
+            backgroundColor: '#fff',
+            borderRadius: '12px',
+            padding: '16px',
+        }}>
+            <div style={{ marginBottom: '12px' }}>
                 {type === 'distance'
-                    ? <p className="mb-0">Среднее расстояние: <strong>{averageValues?.distance} км</strong></p>
-                    : <p className="mb-0">Среднее время: <strong>{averageValues?.duration} мин</strong></p>}
+                    ? <p style={{ margin: 0, color: '#333' }}>
+                        Среднее расстояние: <strong style={{ color: chartColors.distance }}>
+                            {averageValues?.distance} км
+                        </strong>
+                    </p>
+                    : <p style={{ margin: 0, color: '#333' }}>
+                        Среднее время: <strong style={{ color: chartColors.duration }}>
+                            {averageValues?.duration} мин
+                        </strong>
+                    </p>}
             </div>
-            <div style={{ position: 'relative', height: '300px', width: '100%' }}>
+            <div style={{
+                position: 'relative',
+                height: '300px',
+                width: '100%',
+                borderRadius: '8px',
+                overflow: 'hidden'
+            }}>
                 <canvas ref={canvasRef} />
             </div>
         </div>
@@ -214,9 +254,13 @@ export const TrainingChart = ({ data }) => {
                 datasets: [{
                     label: 'Длительность тренировок (минуты)',
                     data: chartValues,
-                    backgroundColor: 'rgba(255, 159, 64, 0.6)',
-                    borderColor: 'rgba(255, 159, 64, 1)',
-                    borderWidth: 1
+                    backgroundColor: '#EBD060',
+                    borderColor: '#EBD060',
+                    borderWidth: 0,
+                    borderRadius: 5,
+                    barThickness: 4,
+                    categoryPercentage: 0.8,
+                    barPercentage: 1.0
                 }]
             },
             options: {
@@ -238,6 +282,9 @@ export const TrainingChart = ({ data }) => {
                 },
                 plugins: {
                     tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
                         callbacks: {
                             label: (context) => {
                                 return `Тренировка: ${context.parsed.y} мин`;
@@ -318,12 +365,12 @@ export const WeightChart = ({ data }) => {
                 datasets: [{
                     label: 'Вес питомца (кг)',
                     data: weights,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: '#C9DBAC',
+                    borderColor: '#507141',
                     borderWidth: 2,
                     tension: 0.1,
                     fill: true,
-                    pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    pointBackgroundColor: '#507141',
                     pointRadius: 4,
                     pointHoverRadius: 6
                 }]

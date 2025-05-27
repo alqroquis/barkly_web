@@ -8,18 +8,23 @@ export const AddPetModal = ({ show, onHide, onSave }) => {
     const [name, setName] = useState("");
     const [breed, setBreed] = useState("");
     const [birthdate, setBirthdate] = useState("");
-    const [stigma, setStigma] = useState(""); // Номер клейма
-    const [microchip, setMicrochip] = useState(""); // Номер микрочипа
-    const [description, setDescription] = useState(""); // Описание питомца
-
+    const [stigma, setStigma] = useState("");
+    const [microchip, setMicrochip] = useState("");
+    const [description, setDescription] = useState("");
 
     const handleSave = () => {
         if (!name || !birthdate) {
             alert("Заполните поля Имя и Дата рождения");
             return;
         }
-        onSave({ name: name, breedId: breed.id, birthDate: new Date(`${birthdate}T12:30:52.673Z`).toISOString(), stigma: stigma, microchip: microchip, description: description });
-
+        onSave({
+            name: name,
+            breedId: breed.id,
+            birthDate: new Date(`${birthdate}T12:30:52.673Z`).toISOString(),
+            stigma: stigma,
+            microchip: microchip,
+            description: description
+        });
         onHide();
     };
 
@@ -91,7 +96,7 @@ export const AddPetModal = ({ show, onHide, onSave }) => {
                 <Button variant="secondary" onClick={onHide}>
                     Отмена
                 </Button>
-                <Button variant="primary" onClick={handleSave}>
+                <Button variant="primary btn-green" onClick={handleSave}>
                     Сохранить
                 </Button>
             </Modal.Footer>
@@ -215,7 +220,7 @@ export const EditPetModal = ({ show, onHide, onSave, pet }) => {
                 <Button variant="secondary" onClick={onHide}>
                     Отмена
                 </Button>
-                <Button variant="primary" onClick={handleSave}>
+                <Button variant="primary btn-green" onClick={handleSave}>
                     Сохранить
                 </Button>
             </Modal.Footer>
@@ -344,7 +349,7 @@ export const EditMedicineCardModal = ({ show, onHide, onSave, medicineCard, petI
                 <Button variant="secondary" onClick={onHide}>
                     Отмена
                 </Button>
-                <Button variant="primary" onClick={handleSave}>
+                <Button variant="primary btn-green" onClick={handleSave}>
                     Сохранить
                 </Button>
             </Modal.Footer>
@@ -418,11 +423,11 @@ export const ActivityModal = ({ show, onHide, petId, fetchActivities, fetchWeigh
 
     const handleAddWeight = async (weightData) => {
         try {
-            const response = await fetch('/api/weight/add-weight', {
+            const response = await fetch('/api/activities/add-weight', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    petId: weightData.petId,
+                    petId: petId,
                     weightKg: weightData.weightKg
                 })
             });
@@ -477,6 +482,7 @@ export const ActivityModal = ({ show, onHide, petId, fetchActivities, fetchWeigh
                     activeKey={activeTab}
                     onSelect={(k) => setActiveTab(k)}
                     className="mb-3"
+                    style={{color: 'black', textDecoration: 'none'} }
                 >
                     <Tab eventKey="walk" title="Прогулка">
                         <Form onSubmit={handleSubmit}>
@@ -505,7 +511,7 @@ export const ActivityModal = ({ show, onHide, petId, fetchActivities, fetchWeigh
                                 formData={formData}
                                 handleChange={handleChange}
                             />
-                            <Button type="submit">Сохранить</Button>
+                            <Button variant="primary btn-green" type="submit">Сохранить</Button>
                         </Form>
                     </Tab>
                     <Tab eventKey="training" title="Тренировка">
@@ -524,7 +530,7 @@ export const ActivityModal = ({ show, onHide, petId, fetchActivities, fetchWeigh
                                 formData={formData}
                                 handleChange={handleChange}
                             />
-                            <Button type="submit">Сохранить</Button>
+                            <Button variant="primary btn-green" type="submit">Сохранить</Button>
                         </Form>
                     </Tab>
                     <Tab eventKey="weight" title="Измерение веса">
@@ -544,26 +550,7 @@ export const ActivityModal = ({ show, onHide, petId, fetchActivities, fetchWeigh
                                 formData={formData}
                                 handleChange={handleChange}
                             />
-                            <Button type="submit">Сохранить</Button>
-                        </Form>
-                    </Tab>
-                    <Tab eventKey="medicine" title="Прием лекарств">
-                        <Form onSubmit={handleSubmit}>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Лекарство</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="medicine"
-                                    value={formData.medicine}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </Form.Group>
-                            <CommonFields
-                                formData={formData}
-                                handleChange={handleChange}
-                            />
-                            <Button type="submit">Сохранить</Button>
+                            <Button variant="primary btn-green" type="submit">Сохранить</Button>
                         </Form>
                     </Tab>
                 </Tabs>

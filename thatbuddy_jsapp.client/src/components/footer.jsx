@@ -1,51 +1,116 @@
 ﻿import React from "react";
+import { Container, Row, Col } from 'react-bootstrap';
+import logo from '../assets/woof-logo.svg';
+import apk from '../assets/apk.svg';
+import googleplay from '../assets/googleplay.svg';
+import appstore from '../assets/appstore.svg';
+
 
 const Footer = () => {
     return (
-        <footer className="bg-dark text-light p-5 mt-5" style={{borderRadius: 30}}>
-            {/*<div className="container">*/}
-            {/*    <div className="row">*/}
-            {/*        */}{/* Левая колонка - информация о компании */}
-            {/*        <div className="col-lg-4 col-md-6 mb-3">*/}
-            {/*            <h5>ООО &quot;ЭтоМойПес&quot;</h5>*/}
-            {/*            <p className="mb-1">ИНН: 1234567890</p>*/}
-            {/*            <p className="mb-1">ОГРН: 9876543210</p>*/}
-            {/*            <p>Адрес: г. Москва, ул. Примерная, д. 10</p>*/}
-            {/*        </div>*/}
+        <footer style={{
+            backgroundColor: '#F5F5F5',
+            color: '#333333',
+            padding: '40px 0 30px',
+            borderRadius: 25,
+            marginTop: 100
+        }}>
+            <Container>
+                <Row className="align-items-center">
+                    {/* Логотип и описание */}
+                    <Col md={6} className="mb-4">
+                        <div className="d-flex align-items-start mb-3">
+                            <img
+                                src={logo}
+                                alt="WoofSupport"
+                                style={{
+                                    height: '40px',
+                                    marginRight: '12px'
+                                }}
+                            />
+                        </div>
+                        <p style={{
+                            fontSize: '14px',
+                            opacity: '0.8',
+                            lineHeight: '1.5',
+                            marginBottom: '20px'
+                        }}>
+                            Не является медицинским приложением, в любом случае лучше всегда консультироваться с ветеринарами.
+                        </p>
+                    </Col>
 
-            {/*        */}{/* Центральная колонка - контакты */}
-            {/*        <div className="col-lg-4 col-md-6 mb-3">*/}
-            {/*            <h5>Контакты</h5>*/}
-            {/*            <p className="mb-1 d-flex align-items-center">*/}
-            {/*                <img src="https://img.icons8.com/?size=100&id=p245zwoX4pkU&format=png&color=FFFFFF" alt="Телефон" width="24" className="me-2" />*/}
-            {/*                <a href="tel:+79991234567" className="text-light text-decoration-none">+7 (999) 123-45-67</a>*/}
-            {/*            </p>*/}
-            {/*            <p className="d-flex align-items-center">*/}
-            {/*                <img src="https://img.icons8.com/?size=100&id=okvpqeYbG0xb&format=png&color=FFFFFF" alt="Email" width="24" className="me-2" />*/}
-            {/*                <a href="mailto:info@mybuddy.ru" className="text-light text-decoration-none">info@mybuddy.ru</a>*/}
-            {/*            </p>*/}
-            {/*        </div>*/}
+                    {/* Навигация */}
+                    <Col md={2} className="mb-4">
+                        <h6 style={{
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            marginBottom: '16px',
+                            color: '#8AA65B'
+                        }}>Приложение</h6>
+                        <ul style={{
+                            listStyle: 'none',
+                            padding: 0,
+                            fontSize: '14px'
+                        }}>
+                            <li style={{ marginBottom: '8px' }}><a href="/features" style={{ color: '#333333', textDecoration: 'none' }}>Функции</a></li>
+                            <li style={{ marginBottom: '8px' }}><a href="/tariffs" style={{ color: '#333333', textDecoration: 'none' }}>Тарифы</a></li>
+                            <li style={{ marginBottom: '8px' }}><a href="/maps" style={{ color: '#333333', textDecoration: 'none' }}>Карты</a></li>
+                            <li style={{ marginBottom: '8px' }}><a href="/shelters" style={{ color: '#333333', textDecoration: 'none' }}>Приюты</a></li>
+                        </ul>
+                    </Col>
 
-            {/*        */}{/* Правая колонка - соцсети */}
-            {/*        <div className="col-lg-4 col-md-12">*/}
-            {/*            <h5>Мы в соцсетях</h5>*/}
-            {/*            <div className="d-flex gap-3">*/}
-            {/*                <a href="https://t.me/mybuddy" className="text-light" target="_blank" rel="noopener noreferrer">*/}
-            {/*                    <img src="https://img.icons8.com/?size=100&id=63306&format=png&color=000000" alt="Telegram" width="30" />*/}
-            {/*                </a>*/}
-            {/*                <a href="https://vk.com" className="text-light" target="_blank" rel="noopener noreferrer">*/}
-            {/*                    <img src="https://img.icons8.com/?size=100&id=114452&format=png&color=000000" alt="VK" width="30" />*/}
-            {/*                </a>*/}
-            {/*            </div>*/}
-            {/*        </div>*/}
-            {/*    </div>*/}
+                    {/* Кнопки скачивания */}
+                    <Col md={2} className="mb-4">
+                        <h6 style={{
+                            fontSize: '14px',
+                            fntWeight: '600',
+                            marginBottom: '16px',
+                            color: '#8AA65B'
+                        }}>Скачать приложение</h6>
+                        <div className="d-flex flex-column" style={{ gap: '10px' }}>
+                            <button className="black-button d-flex align-items-center gap-2">
+                                <img src={apk} alt="Android" width="20" height="20" />
+                                APK
+                            </button>
+                            <button className="black-button d-flex align-items-center gap-2">
+                                <img src={googleplay} alt="Google Play" width="20" height="20" />
+                                Google Play
+                            </button>
+                            <button className="black-button d-flex align-items-center gap-2">
+                                <img src={appstore} alt="App Store" width="20" height="20" />
+                                App Store
+                            </button>
+                        </div>
+                    </Col>
+                </Row>
 
-            {/*    */}{/* Подвал с правами */}
-            {/*    <div className="text-center mt-3">*/}
-            {/*        <p className="mb-0">&copy; {new Date().getFullYear()} ООО &quot;That’s My Buddy&quot;. Все права защищены.</p>*/}
-            {/*    </div>*/}
-            {/*</div>*/}
+                {/* Юридическая информация */}
+                <Row className="mt-4">
+                    <Col>
+                        <div style={{
+                            borderTop: '1px solid #E0E0E0',
+                            paddingTop: '20px',
+                            textAlign: 'center',
+                            fontSize: '12px',
+                            color: '#666666'
+                        }}>
+                            <p style={{ marginBottom: '5px' }}>
+                                © {new Date().getFullYear()} ООО "ВУФ-Инвест" | ИНН 1234567890
+                            </p>
+                            <p style={{ marginBottom: '0' }}>
+                                <a href="/privacy" style={{ color: '#666666', textDecoration: 'none', marginRight: '15px' }}>
+                                    Политика конфиденциальности
+                                </a>
+                                <a href="/terms" style={{ color: '#666666', textDecoration: 'none' }}>
+                                    Пользовательское соглашение
+                                </a>
+                            </p>
+                        </div>
+                    </Col>
+                </Row>
+            </Container>
         </footer>
     );
 };
+
 export default Footer;

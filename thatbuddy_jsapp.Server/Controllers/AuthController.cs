@@ -18,19 +18,11 @@ namespace thatbuddy_jsapp.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController(DatabaseService databaseService, TokenService tokenService, IConfiguration configuration) : ControllerBase
     {
-        private readonly TokenService _tokenService;
-        private readonly IConfiguration _configuration;
-        private readonly DatabaseService _databaseService;
-
-        public AuthController(DatabaseService databaseService, TokenService tokenService, IConfiguration configuration)
-        {
-            _databaseService = databaseService;
-            _tokenService = tokenService;
-            _configuration = configuration;
-        }
-
+        private readonly TokenService _tokenService = tokenService;
+        private readonly IConfiguration _configuration = configuration;
+        private readonly DatabaseService _databaseService = databaseService;
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)

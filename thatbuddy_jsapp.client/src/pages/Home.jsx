@@ -1,14 +1,18 @@
 import React, { useState } from "react";
-import frame from '../assets/phone-frame.png';
-import activity from '../assets/activity_image.png';
-import remind from '../assets/reminder_image.png';
-import document from '../assets/document_image.png';
-import analys from '../assets/analis_image.png';
-import blog from '../assets/blog_image.png';
-import tracker from '../assets/tracker_image.png';
-import shelter from '../assets/shelter_image.png';
-import news from '../assets/news_image.png';
-import appLogo from '../assets/appLogo.png';
+import activity from '../assets/activity_image.jpg';
+import remind from '../assets/reminder_image.jpg';
+import document from '../assets/document_image.jpg';
+import analys from '../assets/analis_image.jpg';
+import blog from '../assets/blog_image.jpg';
+import tracker from '../assets/tracker_image.jpg';
+import shelter from '../assets/shelter_image.jpg';
+import news from '../assets/news_image.jpg';
+import appLogo from '../assets/woof-logo-wide.svg';
+import banner_mobile from '../assets/banner_mobile.png';
+import banner_desktop from '../assets/banner_desktop.png';
+import apk from '../assets/apk.svg';
+import googleplay from '../assets/googleplay.svg';
+import appstore from '../assets/appstore.svg';
 
 
 const Home = () => {
@@ -101,15 +105,24 @@ const AppInfo = () => {
             ></div>
 
             <div className="ms-lg-4 mt-3 mt-lg-0">
-                <h3 className="fw-bold text-lg-start" style={{ maxWidth: "400px" }}>that’s my buddy</h3>
+                <h3 className="fw-bold text-lg-start" style={{ maxWidth: "400px" }}>Woof!</h3>
                 <p style={{ maxWidth: "400px" }}>
                     Следите за здоровьем питомца и делайте жизнь с собакой в городе проще! Напоминания, карты, лекарства — всё в одном приложении.
                 </p>
 
                 <div className="d-flex flex-wrap justify-content-lg-start justify-content-center gap-2">
-                    <button className="black-button">APK</button>
-                    <button className="black-button">Google Play</button>
-                    <button className="black-button">App Store</button>
+                    <button className="black-button d-flex align-items-center gap-2">
+                        <img src={apk} alt="Android" width="20" height="20" />
+                        APK
+                    </button>
+                    <button className="black-button d-flex align-items-center gap-2">
+                        <img src={googleplay} alt="Google Play" width="20" height="20" />
+                        Google Play
+                    </button>
+                    <button className="black-button d-flex align-items-center gap-2">
+                        <img src={appstore} alt="App Store" width="20" height="20" />
+                        App Store
+                    </button>
                 </div>
             </div>
         </div>
@@ -135,41 +148,54 @@ const FAQ = () => {
     };
 
     return (
-        <div className="container d-flex flex-lg-row flex-column flex-wrap justify-content-center gap-3 p-1 mt-lg-5 mb-lg-3">
+        <div className="container d-flex flex-column gap-3 p-3 mt-5 mb-3">
             {faqs.map((faq, index) => (
                 <div
                     key={index}
-                    onClick={() => toggleFAQ(index)}
                     style={{
-                        minHeight: openIndex === index ? "auto" : "80px",
                         background: "#FFFFFF",
-                        borderRadius: "20px",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
+                        borderRadius: "12px",
                         cursor: "pointer",
-                        transition: "height 0.3s ease-in-out",
-                        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+                        boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.1)",
                         overflow: "hidden",
                     }}
-                    className="faq-item p-3 w-sm-100 w-md-50 w-lg-50"                >
-                    <div className="d-flex justify-content-between align-items-center w-100">
+                    className="faq-item p-3"
+                >
+                    <div
+                        className="d-flex justify-content-between align-items-center w-100"
+                        onClick={() => toggleFAQ(index)}
+                    >
                         <p className="mb-0 fw-bold">{faq.question}</p>
-                        <img
-                            src={
-                                openIndex === index
-                                    ? "https://img.icons8.com/?size=100&id=99771&format=png&color=000000" 
-                                    : "https://img.icons8.com/?size=100&id=87356&format=png&color=000000" 
-                            }
-                            alt="Chevron"
-                            width="20"
-                            height="20"
-                        />
+                        <div
+                            style={{
+                                width: "24px",
+                                height: "24px",
+                                borderRadius: "4px",
+                                background: "#F5F5F5",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                            }}
+                        >
+                            {openIndex === index ? (
+                                <span style={{ fontSize: "18px" }}>−</span>
+                            ) : (
+                                <span style={{ fontSize: "18px" }}>+</span>
+                            )}
+                        </div>
                     </div>
                     {openIndex === index && (
-                        <p className="mt-2 text-secondary" style={{ textAlign: "left", width: "100%" }}>
+                        <div
+                            className="mt-3 text-secondary"
+                            style={{
+                                textAlign: "left",
+                                width: "100%",
+                                borderTop: "1px solid #eee",
+                                paddingTop: "12px"
+                            }}
+                        >
                             {faq.answer}
-                        </p>
+                        </div>
                     )}
                 </div>
             ))}
@@ -181,21 +207,22 @@ const FAQ = () => {
 const CustomContainer = () => {
     return (
         <div className="d-flex flex-column align-items-center justify-content-center">
-            <div className="position-relative custom-container overflow-hidden mt-5">
-                <div className="position-absolute bg-white rounded-circle custom-circle"></div>
-                <div className="mt-3 d-flex align-items-center justify-content-end flex-column" style={{width: '100%'}}>
-                    <StyledParagraphs />
+            
+            <picture style={{marginTop:80}}>
+                <source srcSet={banner_desktop} media="(min-width: 768px)" />
+                <img src={banner_mobile} alt="Баннер" className="img-fluid" />
+            </picture>
 
-                    <h2 className="custom-title">
-                        Жить с собакой легко <br />
-                        <span className="highlighted-text">that’s my buddy</span>
-                    </h2>
-                    <p className="w-50 text-center">Мы помогаем следить за здоровьем вашего питомца и облегчаем прогулки с собакой в больших городах.</p>
-                    <img alt="phone-frame" src={frame} style={{ zIndex: 1, marginTop: 60, width: 300, height: 'auto' }} />
-                </div>
+            <h3 className="mt-100 d-flex w-100 justify-content-center">Идеальное решение для <br/> заботливых владельцев собак!</h3>
+            <div className="w-100 d-flex justify-content-center">
+                <p className="text-center" style={{ maxWidth: "50%" }}>
+                    Мы предлагаем универсальное приложение, которое объединяет трекер для ухода за вашим питомцем и социальную платформу для общения с другими собаководами. Это место, где забота о здоровье вашего любимца становится проще, а общение с единомышленниками — интересным и полезным.
+                </p>
             </div>
-            <h3 className="mt-100 d-flex w-100 justify-content-start">Для вашего питомца — все в одном месте</h3>
-            <p className="text-left w-100">С помощью нашего приложения вы сможете:</p>
+          
+
+            <h3 className="mt-100 d-flex w-100 justify-content-center">Для вашего питомца — все в одном месте</h3>
+            <p className="text-center w-100">С помощью нашего приложения вы сможете:</p>
 
             <div className="row row-cols-1 row-cols-lg-4 row-cols-md-2 g-4 mt-3">
                 {functionsList.map((elem, index) => <div key={index} className="col">
@@ -209,8 +236,8 @@ const CustomContainer = () => {
                 </div>)}
             </div>
 
-            <h3 className="mt-100 d-flex w-100 justify-content-start">Сообщество собаководов — обмен опытом и поддержка</h3>
-            <p className="text-left w-100">Мы стремимся создать пространство, где каждый собаковод может найти полезные советы и поддержку. На платформе доступны:</p>
+            <h3 className="mt-100 d-flex w-100 justify-content-center">Сообщество собаководов — обмен опытом и поддержка</h3>
+            <p className="text-center w-100">Мы стремимся создать пространство, где каждый собаковод может найти полезные советы и поддержку. На платформе доступны:</p>
             <div className="row row-cols-1 row-cols-md-4 g-4 mt-3">
                 {societyList.map((elem, index) => <div key={index} className="col">
                     <div className="card" style={{ border: 'none' }}>
@@ -228,12 +255,8 @@ const CustomContainer = () => {
                 <AppInfo />
             </div>
 
-            {/*<h3 className="mt-100 d-flex w-100 justify-content-center">Отвечаем на часто задаваемые вопросы</h3>*/}
-            {/*<div className="position-relative mx-auto custom-container-bottom p-1 mt-sm-3">*/}
-            {/*    <div className="w-100 d-flex align-items-center justify-content-lg-end justify-content-md-end flex-column">*/}
-            {/*        <FAQ />*/}
-            {/*    </div>*/}
-            {/*</div>*/}
+            <h3 className="mt-100 d-flex w-100 justify-content-center">FAQ | Частые вопросы </h3>
+           <FAQ />
         </div>
     );
 };

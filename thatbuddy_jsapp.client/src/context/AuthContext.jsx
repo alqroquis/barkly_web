@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem("user");
+        const storedUser = sessionStorage.getItem("user");
         if (storedUser) {
             setUser(JSON.parse(storedUser));
         }
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
             toast.success(data.message);
             let userInfo = await getUser();
             setUser(userInfo);
-            localStorage.setItem("user", JSON.stringify(userInfo));
+            sessionStorage.setItem("user", JSON.stringify(userInfo));
         } catch (error) {
             console.error("Ошибка входа, вызываю toast...", error.message);
             toast.error(error.message);
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         await axios.get("/auth/logout", { withCredentials: true });
         setUser(null);
-        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
     };
 
     return (

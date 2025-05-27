@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using System.Text;
+using thatbuddy_jsapp.Server.Controllers.Families;
 using thatbuddy_jsapp.Server.Models.Pets;
 using thatbuddy_jsapp.Server.Services;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace thatbuddy_jsapp.Server.Controllers.Pets
 {
@@ -114,12 +114,6 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             }
         }
 
-
-        /// <summary>
-        /// Редактирование записи питомца
-        /// </summary>
-        /// <param name="petId">Id питомца</param>
-        /// <param name="petUpdate">Объект из тела запроса</param>
         [HttpPut("edit/{petId}")]
         public async Task<IActionResult> EditPet(long petId, [FromBody] PetUpdateDto petUpdate)
         {
@@ -137,15 +131,24 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             }
             #endregion
 
-
-            #region Проверка принадлежности питомца пользователю
+            #region Проверка принадлежности питомца
             var pet = await _databaseService.GetPetByIdAsync(petId);
-            if (pet == null || pet.UserId != user.Id)
+            if (pet == null)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
             }
-            #endregion
 
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
+            }
+            #endregion
 
             #region Обновление данных питомца
             var updateQuery = new StringBuilder("UPDATE pets SET ");
@@ -189,9 +192,16 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                 parameters.Add("Microchip", petUpdate.Microchip);
             }
 
+            // Добавляем обновление логотипа
+            if (petUpdate.LogoUrl != null)
+            {
+                updateQuery.Append("logo_url = @LogoUrl, ");
+                parameters.Add("LogoUrl", petUpdate.LogoUrl);
+            }
+
             if (updateQuery.Length > 0)
             {
-                updateQuery.Length -= 2;
+                updateQuery.Length -= 2; // Удаляем последнюю запятую и пробел
             }
 
             updateQuery.Append(" WHERE id = @Id AND user_id = @UserId AND deleted_at IS NULL;");
@@ -243,11 +253,33 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             #endregion
 
 
+            #region Проверка принадлежности питомца пользователю или семье
+            var pet = await _databaseService.GetPetByIdAsync(petId);
+            if (pet == null)
+            {
+                return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+
+            // Если питомец не принадлежит пользователю, проверяем семью
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
+            }
+            #endregion
+
+
             #region Получение информации о питомце
             var query = @"
                         SELECT 
                             p.id AS PetId,
                             p.name AS PetName,
+                            p.logo_url as LogoUrl,
                             p.description AS PetDescription,
                             p.birth_date AS PetBirthDate,
                             p.stigma AS PetStigma,
@@ -295,6 +327,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
                             Id = petInfo.UserId,
                             Name = petInfo.UserName
                         },
+                        petInfo.LogoUrl,
                         Stigma = petInfo.PetStigma,
                         Microchip = petInfo.PetMicrochip,
                         Birthdate = petInfo.PetBirthDate,
@@ -333,11 +366,23 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             #endregion
 
 
-            #region Проверка принадлежности питомца пользователю
+            #region Проверка принадлежности питомца пользователю или семье
             var pet = await _databaseService.GetPetByIdAsync(petId);
-            if (pet == null || pet.UserId != user.Id)
+            if (pet == null)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+
+            // Если питомец не принадлежит пользователю, проверяем семью
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
             }
             #endregion
 
@@ -399,14 +444,23 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
 
             #region Получение списка питомцев пользователя
             var query = @"
-                        SELECT 
-                            p.id AS PetId,
-                            p.name AS PetName
-                        FROM 
-                            pets p
-                        WHERE 
-                            p.user_id = @UserId 
-                            AND p.deleted_at IS NULL;";
+                         SELECT 
+                                p.id AS PetId,
+                                p.name AS PetName
+                            FROM 
+                                pets p
+                            WHERE 
+                                (p.user_id = @UserId OR 
+                                 EXISTS (
+                                    SELECT 1 
+                                    FROM family_members fm
+                                    JOIN families f ON fm.family_id = f.id
+                                    WHERE fm.user_id = p.user_id
+                                    AND f.owner_id = @UserId
+                                    AND fm.deleted_at IS NULL
+                                    AND f.deleted_at IS NULL
+                                 ))
+                                AND p.deleted_at IS NULL;";
 
             using (var connection = new NpgsqlConnection(_connectionString))
             {
@@ -464,11 +518,22 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             #endregion
 
 
-            #region Проверка принадлежности питомца пользователю
+            #region Проверка принадлежности питомца пользователю или семье
             var pet = await _databaseService.GetPetByIdAsync(petId);
-            if (pet == null || pet.UserId != user.Id)
+            if (pet == null)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
             }
             #endregion
 
@@ -584,6 +649,26 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             if (user == null)
             {
                 return Unauthorized(new { Message = MessageHelper.GetMessageText(Messages.InvalidOrMissingToken) });
+            }
+            #endregion
+
+            #region Проверка принадлежности питомца пользователю или семье
+            var pet = await _databaseService.GetPetByIdAsync(petId);
+            if (pet == null)
+            {
+                return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+
+            // Если питомец не принадлежит пользователю, проверяем семью
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
             }
             #endregion
 
@@ -774,11 +859,23 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
             }
             #endregion
 
-            #region Проверка принадлежности питомца пользователю
+            #region Проверка принадлежности питомца пользователю или семье
             var pet = await _databaseService.GetPetByIdAsync(petId);
-            if (pet == null || pet.UserId != user.Id)
+            if (pet == null)
             {
                 return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+            }
+
+            // Если питомец не принадлежит пользователю, проверяем семью
+            if (pet.UserId != user.Id)
+            {
+                var isFamilyPet = await new FamilyController(_databaseService, _tokenService, configuration)
+                    .IsPetBelongsToFamily(petId, user.Id);
+
+                if (!isFamilyPet)
+                {
+                    return NotFound(new { Message = MessageHelper.GetMessageText(Messages.PetNotFound) });
+                }
             }
             #endregion
 
@@ -882,6 +979,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
         public DateTime? BirthDate { get; set; }
         public string? Stigma { get; set; }
         public string? Microchip { get; set; }
+        public string? LogoUrl { get; set; }
     }
 
 
@@ -900,6 +998,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Pets
         public int? BreedId { get; set; }
         public Guid UserId { get; set; }
         public required string UserName { get; set; }
+        public string? LogoUrl { get; set; }
     }
 
 
