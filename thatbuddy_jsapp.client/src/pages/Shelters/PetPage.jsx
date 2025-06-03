@@ -130,51 +130,25 @@ const PetDetails = () => {
                                         </Col>
                                     </Row>
                                 </div>
+                                <Tab eventKey="about" title="О питомце">
+                                    <div className="mt-3">
+                                        <h5 className="mb-3">Характер</h5>
+                                        <p>{pet.Personality || 'Информация отсутствует'}</p>
 
-                                <Tabs
-                                    activeKey={activeTab}
-                                    onSelect={(k) => setActiveTab(k)}
-                                    className="mb-3"
-                                >
-                                    <Tab eventKey="about" title="О питомце">
-                                        <div className="mt-3">
-                                            <h5 className="mb-3">Характер</h5>
-                                            <p>{pet.Personality || 'Информация отсутствует'}</p>
-
-                                            <h5 className="mb-3 mt-4">Здоровье</h5>
-                                            <ul className="list-unstyled">
-                                                <li>
-                                                    <strong>Вакцинация:</strong> {pet.vaccinationStatus || 'Не указано'}
-                                                </li>
-                                                <li>
-                                                    <strong>Стерилизация:</strong> {pet.sterilizationStatus || 'Не указано'}
-                                                </li>
-                                                <li>
-                                                    <strong>Состояние здоровья:</strong> {pet.healthStatus || 'Не указано'}
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </Tab>
-                                    <Tab eventKey="shelter" title="Приют">
-                                        <div className="mt-3">
-                                            <h5 className="d-flex align-items-center">
-                                              {/*  <FaHome className="me-2 text-success" />*/}
-                                                {pet.ShelterName}
-                                            </h5>
-                                            <div className="d-flex align-items-center mt-3 mb-2">
-                                               {/* <FaMapMarkerAlt className="me-2 text-muted" />*/}
-                                                <span>Адрес приюта</span>
-                                            </div>
-                                            <div className="d-flex align-items-center mb-3">
-                                               {/* <FaPhone className="me-2 text-muted" />*/}
-                                                <span>+7 (XXX) XXX-XX-XX</span>
-                                            </div>
-                                            <Button variant="outline-success">
-                                                Показать на карте
-                                            </Button>
-                                        </div>
-                                    </Tab>
-                                </Tabs>
+                                        <h5 className="mb-3 mt-4">Здоровье</h5>
+                                        <ul className="list-unstyled">
+                                            <li>
+                                                <strong>Вакцинация:</strong> {pet.vaccinationStatus || 'Не указано'}
+                                            </li>
+                                            <li>
+                                                <strong>Стерилизация:</strong> {pet.sterilizationStatus || 'Не указано'}
+                                            </li>
+                                            <li>
+                                                <strong>Состояние здоровья:</strong> {pet.healthStatus || 'Не указано'}
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </Tab>
                                 {pet.adoptionStatus === 'Ищет семью' && (
                                     <motion.div
                                         whileHover={{ scale: 1.02 }}

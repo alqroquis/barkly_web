@@ -450,7 +450,7 @@ const RemindersList = () => {
                     <Button variant="secondary" onClick={() => setShowEditModal(false)}>
                         Отмена
                     </Button>
-                    <Button variant="primary" onClick={handleSave}>
+                    <Button variant="primary btn-green" onClick={handleSave}>
                         Сохранить
                     </Button>
                 </Modal.Footer>
@@ -871,19 +871,19 @@ class Profile extends React.Component {
         let petInfo = await petsGet(id);
         let medcardInfo = await medCardGet(id);
         this.setState({ pet: petInfo, medcard: medcardInfo });
-        await this.fetchActivities();
+        await this.fetchActivities(id);
         await this.fetchDocuments(id);
         await this.fetchWeightMeasurements();
-        await this.fetchTrainings();
+        await this.fetchTrainings(id);
         await this.fetchMedicines();
     };
 
 
-    async fetchActivities() {
-        if (!this.state.pet?.id) return;
+    async fetchActivities(id) {
+        if (!id) return;
 
         try {
-            const response = await fetch(`/api/activities/get-activities/${this.state.pet.id}?activityTypeId=1`);
+            const response = await fetch(`/api/activities/get-activities/${id}?activityTypeId=1`);
             const data = await response.json();
             this.setState({ activities: data });
         } catch (error) {
@@ -892,11 +892,11 @@ class Profile extends React.Component {
     }
 
 
-    async fetchTrainings() {
-        if (!this.state.pet?.id) return;
+    async fetchTrainings(id) {
+        if (!id) return;
 
         try {
-            const response = await fetch(`/api/activities/get-activities/${this.state.pet.id}?activityTypeId=4`);
+            const response = await fetch(`/api/activities/get-activities/${id}?activityTypeId=4`);
             const data = await response.json();
             this.setState({ trainings: data });
         } catch (error) {
@@ -1482,7 +1482,7 @@ class Profile extends React.Component {
                                         </>
                                     )}
 
-                                    {activities?.length > 0 && (
+                                    {activities !== null && activities?.length > 0 && (
                                         <>
                                             <h4 className="mb-4">Статистика активностей</h4>
                                             <div className="container bg-white p-4 mb-4" style={{ borderRadius: 25 }}>
@@ -1600,7 +1600,7 @@ class Profile extends React.Component {
                                                     >
                                                         Удалить
                                                     </Button>
-                                                    <Button type="submit">Сохранить</Button>
+                                                    <Button type="submit btn-green">Сохранить</Button>
                                                 </div>
                                             </Form>
                                         </Modal.Body>

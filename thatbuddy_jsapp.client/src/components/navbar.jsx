@@ -1,70 +1,62 @@
 import React from "react";
 import { useContext, useState } from "react";
 import AuthContext from "../context/AuthContext";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Container, Navbar, Nav, Button, Offcanvas } from 'react-bootstrap';
+import { Modal, Form } from "react-bootstrap";
 import logo from "../assets/woof-logo.svg";
 import logoutIcon from '../assets/logout.svg';
 import profileIcon from '../assets/profile.svg';
 import petIcon from '../assets/pet-icon.svg';
 
-const Navbar = () => {
+const Navigation = () => {
     const { user, logout } = useContext(AuthContext);
 
     return (
-        <nav className="navbar navbar-expand-md navbar-light fixed-top bg-white">
-            <div className="container-lg">
-                <button
-                    className="navbar-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarTogglerDemo01"
-                    aria-controls="navbarTogglerDemo01"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation"
+        <Navbar bg="white" expand="md" fixed="top" className="py-2">
+            <Container>
+                <Navbar.Brand href="/">
+                    <img src={logo} alt="Логотип" height="50" />
+                </Navbar.Brand>
+
+                <Navbar.Toggle aria-controls="offcanvasNavbar" />
+
+                <Navbar.Offcanvas
+                    id="offcanvasNavbar"
+                    aria-labelledby="offcanvasNavbarLabel"
+                    placement="end"
                 >
-                    <span className="navbar-toggler-icon"></span>
-                </button>
+                    <Offcanvas.Header closeButton>
+                    </Offcanvas.Header>
+                    <Offcanvas.Body>
+                        <Nav className="mx-auto">
+                            <Nav.Link href="/">Скачать</Nav.Link>
+                            <Nav.Link href="/maps">Карты</Nav.Link>
+                            <Nav.Link href="/shelters">Приюты</Nav.Link>
+                            <Nav.Link href="/tariffs">Тарифы</Nav.Link>
+                        </Nav>
 
-                <div className="collapse navbar-collapse" id="navbarTogglerDemo01">
-                    <a className="navbar-brand" href="/">
-                        <img src={logo} alt="Логотип" />
-                    </a>
-
-                    <ul className="navbar-nav mx-auto mt-2 mt-lg-0">
-                        <li className="nav-item active">
-                            <a className="nav-link" href="/">Скачать</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="/maps">Карты</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="/shelters">Приюты</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link" href="/tariffs">Тарифы</a>
-                        </li>
-                    </ul>
-
-                    {user ? (
-                        <div className="d-flex align-items-start">
-                            <a href="/profile" className="nav-link me-3 d-flex flex-column align-items-center">
-                                <img src={petIcon} alt="Питомцы" style={{ width: "24px", height: "24px" }} />
-                                <span style={{ fontSize: "0.875rem", marginTop: "4px" }}>Питомцы</span>
-                            </a>
-                            <a href="/me" className="nav-link me-3 d-flex flex-column align-items-center">
-                                <img src={profileIcon} alt="Личный кабинет" style={{ width: "24px", height: "24px" }} />
-                                <span style={{ fontSize: "0.875rem", marginTop: "4px", maxWidth: 50, lineHeight: "0.875rem" }}>Личный кабинет</span>
-                            </a>
-                            <button className="nav-link me-3 d-flex flex-column align-items-center" onClick={logout}>
-                                <img src={logoutIcon} style={{ width: "24px", height: "24px" }} />
-                                <span style={{ fontSize: "0.875rem", marginTop: "4px" }}>Выйти</span>
-                            </button>
-                        </div>) :
-                        <AuthModal />
-                    }
-                </div>
-            </div>
-        </nav>
+                        {user ? (
+                            <div className="d-flex align-items-start">
+                                <Nav.Link href="/profile" className="d-flex flex-column align-items-center me-3">
+                                    <img src={petIcon} alt="Питомцы" style={{ width: "24px", height: "24px" }} />
+                                    <span style={{ fontSize: "0.875rem", marginTop: "4px" }}>Питомцы</span>
+                                </Nav.Link>
+                                <Nav.Link href="/me" className="d-flex flex-column align-items-center me-3">
+                                    <img src={profileIcon} alt="Личный кабинет" style={{ width: "24px", height: "24px" }} />
+                                    <span style={{ fontSize: "0.875rem", marginTop: "4px", maxWidth: 50, lineHeight: "0.875rem" }}>Личный кабинет</span>
+                                </Nav.Link>
+                                <Button variant="link" className="d-flex flex-column align-items-center me-3 p-0" onClick={logout}>
+                                    <img src={logoutIcon} alt="Выйти" style={{ width: "24px", height: "24px" }} />
+                                    <span style={{ fontSize: "0.875rem", marginTop: "20px" }}>Выйти</span>
+                                </Button>
+                            </div>
+                        ) : (
+                            <AuthModal />
+                        )}
+                    </Offcanvas.Body>
+                </Navbar.Offcanvas>
+            </Container>
+        </Navbar>
     );
 };
 
@@ -208,4 +200,4 @@ const AuthModal = () => {
     );
 };
 
-export default Navbar;
+export default Navigation;

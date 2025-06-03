@@ -32,7 +32,7 @@ namespace thatbuddy_jsapp.Server.Controllers.Articles
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetArticles([FromQuery] string category = null, [FromQuery] int limit = 3)
+        public async Task<IActionResult> GetArticles([FromQuery] string category = null, [FromQuery] int limit = 20)
         {
             try
             {

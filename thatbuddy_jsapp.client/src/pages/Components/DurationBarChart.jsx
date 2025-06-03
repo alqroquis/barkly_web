@@ -365,7 +365,7 @@ export const WeightChart = ({ data }) => {
                 datasets: [{
                     label: 'Вес питомца (кг)',
                     data: weights,
-                    backgroundColor: '#C9DBAC',
+                    backgroundColor: 'transparent',
                     borderColor: '#507141',
                     borderWidth: 2,
                     tension: 0.1,
